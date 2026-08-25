@@ -7,6 +7,9 @@ on:
     branches: [ "**" ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -34,7 +37,31 @@ jobs:
           gradle-version: '8.6'
 
       - name: Build debug APK
-        run: gradle assembleDebug --stacktrace --no-daemon
+        id: build
+        run: |
+          set +e
+          gradle assembleDebug --stacktrace --no-daemon > /tmp/gradle_build.log 2>&1
+          echo "build_exit=$?" >> "$GITHUB_OUTPUT"
+          tail -n 400 /tmp/gradle_build.log
+
+      - name: Publish build log on failure
+        if: steps.build.outputs.build_exit != '0'
+        run: |
+          git config user.email "ci@dorino.app"
+          git config user.name "Dorino CI"
+          tail -c 90000 /tmp/gradle_build.log > /tmp/last-failure.log
+          git checkout --orphan ci-logs-branch
+          git rm -rf . > /dev/null 2>&1 || true
+          mkdir -p ci-logs
+          cp /tmp/last-failure.log ci-logs/last-failure.log
+          echo "run_id=${{ github.run_id }}" > ci-logs/last-failure-meta.txt
+          git add ci-logs
+          git commit -m "CI failure log for run ${{ github.run_id }}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" ci-logs-branch:ci-logs
+
+      - name: Fail job if build failed
+        if: steps.build.outputs.build_exit != '0'
+        run: exit 1
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
