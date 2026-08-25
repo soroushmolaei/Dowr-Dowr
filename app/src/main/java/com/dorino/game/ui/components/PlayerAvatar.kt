@@ -1,6 +1,5 @@
 package com.dorino.game.ui.components
 
-import androidx.compose.animation.core.InfiniteRepeatableSpec
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -40,7 +39,7 @@ fun PlayerAvatar(
         animationSpec = infiniteRepeatable(
             animation = tween(700),
             repeatMode = RepeatMode.Reverse
-        ) as InfiniteRepeatableSpec<Float>,
+        ),
         label = "pulseScale"
     )
     val glowAlpha by infiniteTransition.animateFloat(
@@ -49,7 +48,7 @@ fun PlayerAvatar(
         animationSpec = infiniteRepeatable(
             animation = tween(700),
             repeatMode = RepeatMode.Reverse
-        ) as InfiniteRepeatableSpec<Float>,
+        ),
         label = "glowAlpha"
     )
 
