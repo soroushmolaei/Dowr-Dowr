@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">دورینو</string>
+    <string name="app_tagline">بازی کن، حدس بزن، برنده شو!</string>
+
+    <!-- صفحه اصلی -->
+    <string name="home_start_game">شروع بازی</string>
+    <string name="home_continue_game">ادامه بازی</string>
+    <string name="home_tutorial">آموزش</string>
+    <string name="home_history">تاریخچه</string>
+    <string name="home_settings">تنظیمات</string>
+    <string name="home_about">درباره بازی</string>
+
+    <!-- انتخاب حالت -->
+    <string name="mode_select_title">حالت بازی را انتخاب کن</string>
+    <string name="mode1_title">نبرد دو تیم</string>
+    <string name="mode1_description">بازیکنان به دو تیم مساوی تقسیم می‌شوند و به صورت یکی‌درمیان دور میز می‌نشینند.</string>
+    <string name="mode2_title">تیم‌های دونفره</string>
+    <string name="mode2_description">بازیکنان به تیم‌های دونفره تقسیم می‌شوند و اعضای هر تیم روبه‌روی یکدیگر می‌نشینند.</string>
+
+    <!-- تعداد بازیکنان -->
+    <string name="player_count_title">تعداد بازیکنان</string>
+    <string name="player_count_subtitle">تعداد بازیکنان باید زوج باشد</string>
+    <string name="player_count_error_odd">تعداد بازیکنان باید زوج باشد.</string>
+    <string name="player_count_error_min">حداقل تعداد بازیکنان ۴ نفر است.</string>
+    <string name="continue_button">ادامه</string>
+    <string name="back_button">بازگشت</string>
+
+    <!-- نام بازیکنان -->
+    <string name="player_names_title">نام بازیکنان</string>
+    <string name="player_name_hint">بازیکن %1$d</string>
+    <string name="use_random_names">استفاده از نام تصادفی</string>
+    <string name="start_game_button">شروع بازی</string>
+    <string name="error_empty_name">نام بازیکن نمی‌تواند خالی باشد.</string>
+    <string name="error_duplicate_name">نام‌های تکراری مجاز نیست.</string>
+
+    <!-- نوبت -->
+    <string name="turn_of_player">نوبت %1$s</string>
+    <string name="turn_of_team">نوبت %1$s</string>
+    <string name="pass_phone_to">گوشی را به %1$s بده</string>
+    <string name="pass_phone_to_team">گوشی را به %1$s بده</string>
+    <string name="ready_button">آماده‌ام</string>
+    <string name="privacy_mode_message">لطفاً گوشی را به بازیکن بعدی بدهید</string>
+
+    <!-- بازی -->
+    <string name="correct_button">درست بود</string>
+    <string name="pass_word_button">رد شو</string>
+    <string name="time_left">زمان باقی‌مانده</string>
+    <string name="score_label">امتیاز</string>
+    <string name="round_label">دور %1$d</string>
+    <string name="time_saved_message">%1$d ثانیه ذخیره شد</string>
+    <string name="get_ready">آماده باش…</string>
+    <string name="go_label">شروع!</string>
+
+    <!-- نتیجه -->
+    <string name="result_title">پایان بازی</string>
+    <string name="winner_team">%1$s برنده شد 🏆</string>
+    <string name="final_score">امتیاز نهایی</string>
+    <string name="total_saved_time">زمان ذخیره‌شده</string>
+    <string name="total_correct">پاسخ صحیح</string>
+    <string name="total_pass">تعداد پاس</string>
+    <string name="best_player">بهترین بازیکن</string>
+    <string name="best_team">بهترین تیم</string>
+    <string name="play_again">بازی دوباره</string>
+    <string name="back_to_home">بازگشت به خانه</string>
+
+    <!-- تنظیمات -->
+    <string name="settings_title">تنظیمات</string>
+    <string name="settings_sound">صدا</string>
+    <string name="settings_music">موسیقی</string>
+    <string name="settings_vibration">لرزش</string>
+    <string name="settings_timer_duration">مدت تایمر</string>
+    <string name="settings_word_categories">دسته‌بندی کلمات</string>
+    <string name="settings_round_count">تعداد دورها</string>
+    <string name="settings_dark_mode">حالت تاریک</string>
+    <string name="settings_privacy_mode">حریم خصوصی هنگام انتقال گوشی</string>
+    <string name="settings_language">زبان</string>
+    <string name="settings_reset">بازنشانی تنظیمات</string>
+
+    <!-- زمان‌بندی -->
+    <string name="duration_30">۳۰ ثانیه</string>
+    <string name="duration_45">۴۵ ثانیه</string>
+    <string name="duration_60">۶۰ ثانیه</string>
+    <string name="duration_90">۹۰ ثانیه</string>
+    <string name="duration_120">۱۲۰ ثانیه</string>
+    <string name="duration_180">۱۸۰ ثانیه</string>
+    <string name="duration_unlimited">بدون محدودیت</string>
+
+    <!-- دسته‌بندی کلمات -->
+    <string name="category_general">عمومی</string>
+    <string name="category_movies">فیلم و سریال</string>
+    <string name="category_celebrities">مشاهیر</string>
+    <string name="category_food">غذا</string>
+    <string name="category_animals">حیوانات</string>
+    <string name="category_places">مکان‌ها</string>
+    <string name="category_jobs">شغل‌ها</string>
+    <string name="category_objects">اشیاء</string>
+    <string name="category_hobbies">سرگرمی</string>
+    <string name="category_technology">تکنولوژی</string>
+    <string name="category_sports">ورزشی</string>
+    <string name="category_iranian">ایرانی</string>
+    <string name="category_hard">سخت</string>
+    <string name="category_easy">آسان</string>
+    <string name="category_funny">خنده‌دار</string>
+
+    <!-- آموزش -->
+    <string name="tutorial_title">آموزش بازی</string>
+    <string name="tutorial_step1_title">مفهوم را توضیح بده</string>
+    <string name="tutorial_step1_desc">یک کلمه روی صفحه نشان داده می‌شود. بدون گفتن خود کلمه، مفهومش را برای تیمت توضیح بده.</string>
+    <string name="tutorial_step2_title">حدس بزنید</string>
+    <string name="tutorial_step2_desc">هم‌تیمی‌هایت باید کلمه را حدس بزنند. با هر پاسخ درست، یک امتیاز می‌گیرید.</string>
+    <string name="tutorial_step3_title">نوبت بچرخد</string>
+    <string name="tutorial_step3_desc">وقتی زمان تمام شد، گوشی به نفر بعدی می‌رسد و بازی ادامه پیدا می‌کند.</string>
+    <string name="tutorial_mode1_desc">در حالت نبرد دو تیم، بازیکنان یکی‌درمیان می‌نشینند.</string>
+    <string name="tutorial_mode2_desc">در حالت تیم‌های دونفره، هر بازیکن روبه‌روی هم‌تیمی خودش می‌نشیند.</string>
+    <string name="tutorial_next">بعدی</string>
+    <string name="tutorial_skip">رد شدن</string>
+    <string name="tutorial_finish">شروع کن!</string>
+
+    <!-- تاریخچه -->
+    <string name="history_title">تاریخچه بازی‌ها</string>
+    <string name="history_empty">هنوز بازی‌ای ثبت نشده است.</string>
+
+    <!-- درباره -->
+    <string name="about_title">درباره دورینو</string>
+    <string name="about_description">دورینو یک بازی دورهمی فارسی است که برای جمع‌های دوستانه طراحی شده. بدون نیاز به اینترنت، هر تعداد بازیکن زوج می‌توانند بازی کنند.</string>
+    <string name="about_version">نسخه %1$s</string>
+
+    <!-- عمومی -->
+    <string name="resume_dialog_title">ادامه بازی قبلی؟</string>
+    <string name="resume_dialog_message">یک بازی نیمه‌تمام پیدا شد. می‌خواهی ادامه بدهی یا بازی جدید شروع کنی؟</string>
+    <string name="resume_dialog_continue">ادامه بده</string>
+    <string name="resume_dialog_new">بازی جدید</string>
+    <string name="exit_dialog_title">خروج از بازی؟</string>
+    <string name="exit_dialog_message">پیشرفت بازی فعلی ذخیره می‌شود.</string>
+    <string name="exit_dialog_confirm">خروج</string>
+    <string name="exit_dialog_cancel">انصراف</string>
+</resources>

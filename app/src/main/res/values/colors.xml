@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="dorino_background">#0F0B1E</color>
+    <color name="dorino_surface">#1A1530</color>
+    <color name="dorino_primary">#8B5CF6</color>
+    <color name="dorino_secondary">#22D3EE</color>
+    <color name="dorino_team_a">#FF6B6B</color>
+    <color name="dorino_team_b">#4DD0E5</color>
+</resources>

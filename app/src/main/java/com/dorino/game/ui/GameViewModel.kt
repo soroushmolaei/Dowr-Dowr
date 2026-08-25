@@ -1,0 +1,244 @@
+package com.dorino.game.ui
+
+import android.content.Context
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import com.dorino.game.data.audio.SoundEffect
+import com.dorino.game.data.audio.SoundManager
+import com.dorino.game.data.model.GameHistoryEntry
+import com.dorino.game.data.model.GameMode
+import com.dorino.game.data.model.GameSettings
+import com.dorino.game.data.model.GameState
+import com.dorino.game.data.model.GameStatus
+import com.dorino.game.data.persistence.GameStateStore
+import com.dorino.game.domain.GameEngine
+import com.dorino.game.domain.GameResult
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+/** تنظیمات موقتِ در حال ساخت بازی، پیش از ایجاد GameState نهایی. */
+data class GameSetupDraft(
+    val mode: GameMode? = null,
+    val playerCount: Int = 4,
+    val playerNames: List<String> = emptyList()
+)
+
+class GameViewModel(
+    context: Context
+) : ViewModel() {
+
+    private val store = GameStateStore(context)
+    private val soundManager = SoundManager(context)
+
+    private val _settings = MutableStateFlow(GameSettings())
+    val settings: StateFlow<GameSettings> = _settings.asStateFlow()
+
+    private val _gameState = MutableStateFlow<GameState?>(null)
+    val gameState: StateFlow<GameState?> = _gameState.asStateFlow()
+
+    private val _setupDraft = MutableStateFlow(GameSetupDraft())
+    val setupDraft: StateFlow<GameSetupDraft> = _setupDraft.asStateFlow()
+
+    private val _history = MutableStateFlow<List<GameHistoryEntry>>(emptyList())
+    val history: StateFlow<List<GameHistoryEntry>> = _history.asStateFlow()
+
+    private val _lastResult = MutableStateFlow<GameResult?>(null)
+    val lastResult: StateFlow<GameResult?> = _lastResult.asStateFlow()
+
+    private var timerJob: Job? = null
+
+    init {
+        viewModelScope.launch {
+            store.settingsFlow.collect { _settings.value = it }
+        }
+        viewModelScope.launch {
+            store.savedGameFlow.collect { _gameState.value = it }
+        }
+        viewModelScope.launch {
+            store.historyFlow.collect { _history.value = it }
+        }
+    }
+
+    // ---------- تنظیمات ----------
+
+    fun updateSettings(update: (GameSettings) -> GameSettings) {
+        val newSettings = update(_settings.value)
+        _settings.value = newSettings
+        viewModelScope.launch { store.saveSettings(newSettings) }
+    }
+
+    // ---------- ساخت بازی ----------
+
+    fun selectMode(mode: GameMode) {
+        _setupDraft.value = _setupDraft.value.copy(mode = mode)
+    }
+
+    fun setPlayerCount(count: Int) {
+        _setupDraft.value = _setupDraft.value.copy(playerCount = count)
+    }
+
+    fun setPlayerNames(names: List<String>) {
+        _setupDraft.value = _setupDraft.value.copy(playerNames = names)
+    }
+
+    fun defaultPlayerNames(count: Int): List<String> = (1..count).map { "بازیکن $it" }
+
+    fun startNewGame() {
+        val draft = _setupDraft.value
+        val mode = draft.mode ?: GameMode.TEAM_BATTLE
+        val names = draft.playerNames.ifEmpty { defaultPlayerNames(draft.playerCount) }
+        val state = GameEngine.createGame(mode, names, _settings.value)
+        _gameState.value = state
+        _setupDraft.value = GameSetupDraft()
+        persist(state)
+        soundManager.play(SoundEffect.START, _settings.value.soundEnabled)
+    }
+
+    // ---------- جریان نوبت ----------
+
+    fun confirmReadyStartTurn() {
+        val state = _gameState.value ?: return
+        val updated = GameEngine.startTurn(state)
+        _gameState.value = updated
+        persist(updated)
+        startTimerLoop()
+    }
+
+    private fun startTimerLoop() {
+        timerJob?.cancel()
+        val duration = _gameState.value?.settings?.timerDurationSeconds ?: 0
+        if (duration == 0) return // بدون محدودیت
+        timerJob = viewModelScope.launch {
+            while (true) {
+                delay(1000)
+                val current = _gameState.value ?: break
+                if (current.status != GameStatus.IN_PROGRESS) break
+                val ticked = GameEngine.tickTimer(current)
+                _gameState.value = ticked
+                if (ticked.timeRemainingSeconds in 1..3) {
+                    soundManager.play(SoundEffect.TIMER_WARNING, _settings.value.soundEnabled)
+                }
+                if (ticked.timeRemainingSeconds <= 0) {
+                    finishTurn()
+                    break
+                }
+            }
+        }
+    }
+
+    fun markCorrect() {
+        val state = _gameState.value ?: return
+        if (state.status != GameStatus.IN_PROGRESS) return
+        val updated = GameEngine.markCorrect(state)
+        _gameState.value = updated
+        soundManager.play(SoundEffect.CORRECT, _settings.value.soundEnabled)
+        soundManager.vibrate(_settings.value.vibrationEnabled)
+    }
+
+    fun markPass() {
+        val state = _gameState.value ?: return
+        if (state.status != GameStatus.IN_PROGRESS) return
+        val updated = GameEngine.markPass(state)
+        _gameState.value = updated
+        soundManager.play(SoundEffect.PASS, _settings.value.soundEnabled)
+    }
+
+    fun finishTurnManually() {
+        if (_gameState.value?.status == GameStatus.IN_PROGRESS) finishTurn()
+    }
+
+    private fun finishTurn() {
+        timerJob?.cancel()
+        val state = _gameState.value ?: return
+        val updated = GameEngine.endTurn(state)
+        _gameState.value = updated
+        persist(updated)
+        if (updated.status == GameStatus.FINISHED) {
+            onGameFinished(updated)
+        } else {
+            soundManager.play(SoundEffect.TURN_CHANGE, _settings.value.soundEnabled)
+        }
+    }
+
+    private fun onGameFinished(state: GameState) {
+        val result = GameEngine.computeResult(state)
+        _lastResult.value = result
+        val hasWinner = result.winnerTeams.size == 1
+        soundManager.play(
+            if (hasWinner) SoundEffect.VICTORY else SoundEffect.DEFEAT,
+            _settings.value.soundEnabled
+        )
+        viewModelScope.launch {
+            val winnerName = result.winnerTeams.firstOrNull()?.name ?: "مساوی"
+            store.addHistoryEntry(
+                GameHistoryEntry(
+                    id = state.id,
+                    dateEpochMillis = System.currentTimeMillis(),
+                    mode = state.mode,
+                    playerCount = state.players.size,
+                    winnerName = winnerName,
+                    winnerScore = result.winnerTeams.firstOrNull()?.score ?: 0,
+                    durationSeconds = result.durationSeconds
+                )
+            )
+        }
+    }
+
+    fun clearFinishedGame() {
+        timerJob?.cancel()
+        _gameState.value = null
+        _lastResult.value = null
+        viewModelScope.launch { store.clearGameState() }
+    }
+
+    /** آماده‌سازی یک بازی نیمه‌تمام برای ادامه (مثلاً پس از بستن برنامه در وسط بازی). */
+    fun prepareResume() {
+        val state = _gameState.value ?: return
+        if (state.status == GameStatus.IN_PROGRESS) {
+            timerJob?.cancel()
+            val resumed = state.copy(status = GameStatus.TURN_TRANSITION, currentWord = null)
+            _gameState.value = resumed
+            persist(resumed)
+        }
+    }
+
+    /** شروع مجدد بازی با همان بازیکنان و همان حالت بازیِ تمام‌شده. */
+    fun playAgainSamePlayers() {
+        val finished = _gameState.value ?: return
+        val names = finished.players.sortedBy { it.position }.map { it.name }
+        val newState = GameEngine.createGame(finished.mode, names, _settings.value)
+        _lastResult.value = null
+        _gameState.value = newState
+        persist(newState)
+        soundManager.play(SoundEffect.START, _settings.value.soundEnabled)
+    }
+
+    fun playClickSound() {
+        soundManager.play(SoundEffect.CLICK, _settings.value.soundEnabled)
+    }
+
+    private fun persist(state: GameState) {
+        viewModelScope.launch { store.saveGameState(state) }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        timerJob?.cancel()
+        soundManager.release()
+    }
+
+    companion object {
+        fun factory(context: Context): ViewModelProvider.Factory =
+            object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return GameViewModel(context.applicationContext) as T
+                }
+            }
+    }
+}
