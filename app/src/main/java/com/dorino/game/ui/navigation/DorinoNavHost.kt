@@ -10,6 +10,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.dorino.game.data.model.GameStatus
 import com.dorino.game.ui.GameViewModel
+import com.dorino.game.ui.gameoptions.GameOptionsScreen
 import com.dorino.game.ui.gameplay.GamePlayScreen
 import com.dorino.game.ui.history.HistoryScreen
 import com.dorino.game.ui.home.HomeScreen
@@ -51,8 +52,17 @@ fun DorinoNavHost(viewModel: GameViewModel) {
             ModeSelectScreen(
                 onModeSelected = { mode ->
                     viewModel.selectMode(mode)
-                    navController.navigate(Routes.PLAYER_COUNT)
+                    navController.navigate(Routes.GAME_OPTIONS)
                 },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.GAME_OPTIONS) {
+            GameOptionsScreen(
+                settings = settings,
+                onUpdate = viewModel::updateSettings,
+                onContinue = { navController.navigate(Routes.PLAYER_COUNT) },
                 onBack = { navController.popBackStack() }
             )
         }

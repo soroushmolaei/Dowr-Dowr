@@ -22,8 +22,17 @@ enum class WordCategory(val labelRes: Int) {
     FUNNY(R.string.category_funny)
 }
 
+/** درجه سختی مستقل از دسته‌بندی؛ هر کلمه در هر دسته‌ای می‌تواند هرکدام از این سطوح را داشته باشد. */
+@Serializable
+enum class Difficulty(val labelRes: Int) {
+    EASY(R.string.difficulty_easy),
+    MEDIUM(R.string.difficulty_medium),
+    HARD(R.string.difficulty_hard)
+}
+
 @Serializable
 data class Word(
     val text: String,
-    val category: WordCategory
+    val category: WordCategory,
+    val difficulty: Difficulty = Difficulty.MEDIUM
 )

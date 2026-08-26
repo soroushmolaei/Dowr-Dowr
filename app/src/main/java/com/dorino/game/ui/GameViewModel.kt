@@ -51,6 +51,7 @@ class GameViewModel(
     val lastResult: StateFlow<GameResult?> = _lastResult.asStateFlow()
 
     private var timerJob: Job? = null
+    private var beepJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -107,6 +108,7 @@ class GameViewModel(
         _gameState.value = updated
         persist(updated)
         startTimerLoop()
+        startBeepLoop()
     }
 
     private fun startTimerLoop() {
@@ -120,15 +122,46 @@ class GameViewModel(
                 if (current.status != GameStatus.IN_PROGRESS) break
                 val ticked = GameEngine.tickTimer(current)
                 _gameState.value = ticked
-                if (ticked.timeRemainingSeconds in 1..3) {
-                    soundManager.play(SoundEffect.TIMER_WARNING, _settings.value.soundEnabled)
-                }
                 if (ticked.timeRemainingSeconds <= 0) {
                     finishTurn()
                     break
                 }
             }
         }
+    }
+
+    /**
+     * حلقه‌ی مستقلِ بوق برای ایجاد استرس: از ابتدا هر ثانیه یک تیک ملایم،
+     * از ۱۵ ثانیه‌ی آخر با شتاب تصاعدی سریع‌تر می‌شود. بوق ممتد پایانی
+     * توسط [finishTurn] (نه این حلقه) پخش می‌شود تا با پایان واقعی هم‌زمان باشد.
+     */
+    private fun startBeepLoop() {
+        beepJob?.cancel()
+        val duration = _gameState.value?.settings?.timerDurationSeconds ?: 0
+        if (duration == 0) return // بدون محدودیت: بوق نداریم
+        beepJob = viewModelScope.launch {
+            while (true) {
+                val current = _gameState.value ?: break
+                if (current.status != GameStatus.IN_PROGRESS) break
+                val remaining = current.timeRemainingSeconds
+                if (remaining <= 0) break
+                if (remaining <= URGENT_PHASE_SECONDS) {
+                    soundManager.play(SoundEffect.TIMER_WARNING, _settings.value.soundEnabled)
+                    soundManager.vibrate(_settings.value.vibrationEnabled, durationMs = 20L)
+                } else {
+                    soundManager.play(SoundEffect.TICK_SOFT, _settings.value.soundEnabled)
+                }
+                delay(beepIntervalMs(remaining))
+            }
+        }
+    }
+
+    private fun beepIntervalMs(remainingSeconds: Int): Long {
+        if (remainingSeconds > URGENT_PHASE_SECONDS) return 1000L
+        // از ۱۰۰۰ میلی‌ثانیه در ثانیه‌ی ۱۵، با شتاب تصاعدی تا حدود ۱۱۰ میلی‌ثانیه نزدیک صفر.
+        val t = (URGENT_PHASE_SECONDS - remainingSeconds).coerceIn(0, URGENT_PHASE_SECONDS) / URGENT_PHASE_SECONDS.toFloat()
+        val eased = t * t
+        return (1000 - eased * 890).toLong().coerceAtLeast(110L)
     }
 
     fun markCorrect() {
@@ -146,6 +179,7 @@ class GameViewModel(
             updated.status == GameStatus.FINISHED -> {
                 // در حالت دست‌به‌دست ممکن است بازی دقیقاً با یک پاسخ صحیح تمام شود.
                 timerJob?.cancel()
+                beepJob?.cancel()
                 persist(updated)
                 onGameFinished(updated)
             }
@@ -171,12 +205,17 @@ class GameViewModel(
 
     private fun finishTurn() {
         timerJob?.cancel()
+        beepJob?.cancel()
         val state = _gameState.value ?: return
+        val timedOut = state.settings.timerDurationSeconds != 0 && state.timeRemainingSeconds <= 0
         val updated = GameEngine.endTurn(state)
         _gameState.value = updated
         persist(updated)
         if (updated.status == GameStatus.FINISHED) {
             onGameFinished(updated)
+        } else if (timedOut) {
+            soundManager.play(SoundEffect.TIME_UP, _settings.value.soundEnabled)
+            soundManager.vibrate(_settings.value.vibrationEnabled, durationMs = 180L)
         } else {
             soundManager.play(SoundEffect.TURN_CHANGE, _settings.value.soundEnabled)
         }
@@ -208,6 +247,7 @@ class GameViewModel(
 
     fun clearFinishedGame() {
         timerJob?.cancel()
+        beepJob?.cancel()
         _gameState.value = null
         _lastResult.value = null
         viewModelScope.launch { store.clearGameState() }
@@ -218,6 +258,7 @@ class GameViewModel(
         val state = _gameState.value ?: return
         if (state.status == GameStatus.IN_PROGRESS) {
             timerJob?.cancel()
+            beepJob?.cancel()
             val resumed = state.copy(status = GameStatus.TURN_TRANSITION, currentWord = null)
             _gameState.value = resumed
             persist(resumed)
@@ -246,10 +287,13 @@ class GameViewModel(
     override fun onCleared() {
         super.onCleared()
         timerJob?.cancel()
+        beepJob?.cancel()
         soundManager.release()
     }
 
     companion object {
+        private const val URGENT_PHASE_SECONDS = 15
+
         fun factory(context: Context): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")

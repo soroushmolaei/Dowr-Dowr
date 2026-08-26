@@ -58,7 +58,7 @@ object GameEngine {
 
     /** انتخاب یک کلمه‌ی تصادفیِ استفاده‌نشده. اگر همه استفاده شده باشند، مجموعه Reset می‌شود. */
     private fun pickWord(state: GameState): Pair<String?, Set<String>> {
-        val pool = WordRepository.wordsForCategories(state.settings.selectedCategories)
+        val pool = WordRepository.wordsForFilters(state.settings.selectedCategories, state.settings.selectedDifficulties)
         if (pool.isEmpty()) return null to state.usedWords
         val available = pool.filter { it.text !in state.usedWords }
         return if (available.isNotEmpty()) {

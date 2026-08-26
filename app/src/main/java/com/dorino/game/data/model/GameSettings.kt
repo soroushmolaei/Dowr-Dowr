@@ -10,6 +10,7 @@ data class GameSettings(
     val vibrationEnabled: Boolean = true,
     val timerDurationSeconds: Int = 60,
     val selectedCategories: Set<WordCategory> = WordCategory.entries.toSet(),
+    val selectedDifficulties: Set<Difficulty> = Difficulty.entries.toSet(),
     val roundCount: Int = 3,
     val privacyModeEnabled: Boolean = false,
     val turnStyle: TurnStyle = TurnStyle.RALLY,

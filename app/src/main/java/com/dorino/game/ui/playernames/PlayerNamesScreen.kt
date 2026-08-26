@@ -67,14 +67,26 @@ fun PlayerNamesScreen(
             color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(Modifier.height(6.dp))
-        SecondaryPill(
-            text = stringResource(R.string.use_random_names),
-            onClick = {
-                val shuffled = RANDOM_FIRST_NAMES.shuffled()
-                names = (0 until playerCount).map { i ->
-                    shuffled.getOrElse(i % shuffled.size) { "بازیکن ${i + 1}" }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            SecondaryPill(
+                text = stringResource(R.string.use_random_names),
+                onClick = {
+                    val shuffled = RANDOM_FIRST_NAMES.shuffled()
+                    names = (0 until playerCount).map { i ->
+                        shuffled.getOrElse(i % shuffled.size) { "بازیکن ${i + 1}" }
+                    }
                 }
-            }
+            )
+            SecondaryPill(
+                text = stringResource(R.string.randomize_teams),
+                onClick = { names = names.shuffled() }
+            )
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = stringResource(R.string.randomize_teams_hint),
+            color = DorinoOnSurfaceMuted,
+            fontSize = 11.sp
         )
         Spacer(Modifier.height(16.dp))
 

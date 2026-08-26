@@ -3,6 +3,7 @@ package com.dorino.game.ui.navigation
 object Routes {
     const val HOME = "home"
     const val MODE_SELECT = "mode_select"
+    const val GAME_OPTIONS = "game_options"
     const val PLAYER_COUNT = "player_count"
     const val PLAYER_NAMES = "player_names"
     const val TURN_TRANSITION = "turn_transition"

@@ -10,7 +10,7 @@ import android.os.VibratorManager
 import com.dorino.game.R
 
 enum class SoundEffect {
-    CLICK, CORRECT, PASS, TIMER_WARNING, TURN_CHANGE, VICTORY, DEFEAT, START
+    CLICK, CORRECT, PASS, TIMER_WARNING, TURN_CHANGE, VICTORY, DEFEAT, START, TICK_SOFT, TIME_UP
 }
 
 /** پخش افکت صوتی بازی با SoundPool، سبک و بدون نیاز به فایل‌های حجیم. */
@@ -36,7 +36,9 @@ class SoundManager(context: Context) {
         SoundEffect.TURN_CHANGE to soundPool.load(appContext, R.raw.sfx_turn_change, 1),
         SoundEffect.VICTORY to soundPool.load(appContext, R.raw.sfx_victory, 1),
         SoundEffect.DEFEAT to soundPool.load(appContext, R.raw.sfx_defeat, 1),
-        SoundEffect.START to soundPool.load(appContext, R.raw.sfx_start, 1)
+        SoundEffect.START to soundPool.load(appContext, R.raw.sfx_start, 1),
+        SoundEffect.TICK_SOFT to soundPool.load(appContext, R.raw.sfx_tick_soft, 1),
+        SoundEffect.TIME_UP to soundPool.load(appContext, R.raw.sfx_time_up, 1)
     )
 
     private val vibrator: Vibrator? by lazy {
