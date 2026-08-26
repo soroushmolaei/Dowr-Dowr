@@ -12,6 +12,7 @@ data class GameSettings(
     val selectedCategories: Set<WordCategory> = WordCategory.entries.toSet(),
     val roundCount: Int = 3,
     val privacyModeEnabled: Boolean = false,
+    val turnStyle: TurnStyle = TurnStyle.RALLY,
     val language: String = "fa"
 ) {
     companion object {

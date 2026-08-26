@@ -72,6 +72,11 @@
     <string name="settings_timer_duration">مدت تایمر</string>
     <string name="settings_word_categories">دسته‌بندی کلمات</string>
     <string name="settings_round_count">تعداد دورها</string>
+    <string name="settings_turn_style">شیوه‌ی نوبت‌گیری</string>
+    <string name="turn_style_rally">رالی</string>
+    <string name="turn_style_rally_desc">هرکی جواب بده، نوبتش رو نگه می‌داره تا زمان تمام بشه.</string>
+    <string name="turn_style_rotating">دست‌به‌دست</string>
+    <string name="turn_style_rotating_desc">بعد از هر پاسخ درست، گوشی فوراً دست نفر بعدی می‌ره.</string>
     <string name="settings_dark_mode">حالت تاریک</string>
     <string name="settings_privacy_mode">حریم خصوصی هنگام انتقال گوشی</string>
     <string name="settings_language">زبان</string>

@@ -6,6 +6,7 @@ import com.dorino.game.data.model.GameState
 import com.dorino.game.data.model.GameStatus
 import com.dorino.game.data.model.Player
 import com.dorino.game.data.model.Team
+import com.dorino.game.data.model.TurnStyle
 import com.dorino.game.data.words.WordRepository
 import java.util.UUID
 
@@ -94,13 +95,19 @@ object GameEngine {
         val updatedTeams = state.teams.map {
             if (it.id == player.teamId) it.copy(score = it.score + 1, correctCount = it.correctCount + 1) else it
         }
-        val (word, usedWords) = pickWord(state)
-        return state.copy(
-            players = updatedPlayers,
-            teams = updatedTeams,
-            currentWord = word,
-            usedWords = usedWords
-        )
+        val scored = state.copy(players = updatedPlayers, teams = updatedTeams)
+
+        return when (state.settings.turnStyle) {
+            TurnStyle.RALLY -> {
+                // رالی: همان بازیکن با کلمه‌ی جدید ادامه می‌دهد تا زمان تمام شود.
+                val (word, usedWords) = pickWord(scored)
+                scored.copy(currentWord = word, usedWords = usedWords)
+            }
+            TurnStyle.ROTATING -> {
+                // دست‌به‌دست: بلافاصله نوبت به نفر بعدی می‌رسد، بدون ریست شدن تایمر.
+                passToNextPlayerSeamlessly(scored)
+            }
+        }
     }
 
     fun markPass(state: GameState): GameState {
@@ -120,7 +127,62 @@ object GameEngine {
         )
     }
 
-    /** پایان نوبت فعلی: انتقال زمان باقی‌مانده به‌عنوان زمان ذخیره‌شده و رفتن به بازیکن بعدی. */
+    /** نتیجه‌ی رفتن به بازیکن بعدی در دور میز، مستقل از این‌که تایمر ریست شود یا نه. */
+    private data class Advance(
+        val players: List<Player>,
+        val nextIndex: Int,
+        val nextRound: Int,
+        val finished: Boolean
+    )
+
+    private fun advanceToNextPlayer(state: GameState): Advance {
+        val playersDeactivated = state.players.map { it.copy(isActive = false) }
+        val nextIndex = (state.currentPlayerIndex + 1) % state.players.size
+        val wrappedAround = nextIndex == 0
+        val nextRound = if (wrappedAround) state.round + 1 else state.round
+        val playersActivated = playersDeactivated.mapIndexed { index, p ->
+            if (index == nextIndex) p.copy(isActive = true) else p
+        }
+        val finished = nextRound > state.totalRounds
+        return Advance(
+            players = playersActivated,
+            nextIndex = nextIndex,
+            nextRound = nextRound.coerceAtMost(state.totalRounds),
+            finished = finished
+        )
+    }
+
+    /**
+     * دست‌به‌دست: نوبت فوراً به نفر بعد می‌رسد اما زمان باقی‌مانده دست‌نخورده باقی می‌ماند
+     * و صفحه‌ی «آماده‌ام» نمایش داده نمی‌شود؛ بازی همچنان IN_PROGRESS باقی می‌ماند.
+     */
+    private fun passToNextPlayerSeamlessly(state: GameState): GameState {
+        val advance = advanceToNextPlayer(state)
+        if (advance.finished) {
+            return state.copy(
+                players = advance.players,
+                currentPlayerIndex = advance.nextIndex,
+                round = advance.nextRound,
+                currentWord = null,
+                status = GameStatus.FINISHED,
+                finishedAtEpochMillis = System.currentTimeMillis()
+            )
+        }
+        val (word, usedWords) = pickWord(state)
+        return state.copy(
+            players = advance.players,
+            currentPlayerIndex = advance.nextIndex,
+            round = advance.nextRound,
+            currentWord = word,
+            usedWords = usedWords
+            // status و timeRemainingSeconds عمداً دست‌نخورده می‌مانند.
+        )
+    }
+
+    /**
+     * پایان کامل نوبت (پایان زمان یا پایان دستی): زمان باقی‌مانده به‌عنوان زمان ذخیره‌شده
+     * ثبت می‌شود، تایمر برای نفر بعد ریست خواهد شد و صفحه‌ی انتقال نوبت نمایش داده می‌شود.
+     */
     fun endTurn(state: GameState): GameState {
         val currentTeamId = state.currentPlayer?.teamId
         val leftover = state.timeRemainingSeconds
@@ -130,23 +192,15 @@ object GameEngine {
             }
         } else state.teams
 
-        val playersDeactivated = state.players.map { it.copy(isActive = false) }
-        val nextIndex = (state.currentPlayerIndex + 1) % state.players.size
-        val wrappedAround = nextIndex == 0
-        val nextRound = if (wrappedAround) state.round + 1 else state.round
-        val playersActivated = playersDeactivated.mapIndexed { index, p ->
-            if (index == nextIndex) p.copy(isActive = true) else p
-        }
-
-        val finished = nextRound > state.totalRounds
+        val advance = advanceToNextPlayer(state)
         return state.copy(
             teams = teamsAfterSave,
-            players = playersActivated,
-            currentPlayerIndex = nextIndex,
-            round = nextRound.coerceAtMost(state.totalRounds),
+            players = advance.players,
+            currentPlayerIndex = advance.nextIndex,
+            round = advance.nextRound,
             currentWord = null,
-            status = if (finished) GameStatus.FINISHED else GameStatus.TURN_TRANSITION,
-            finishedAtEpochMillis = if (finished) System.currentTimeMillis() else null
+            status = if (advance.finished) GameStatus.FINISHED else GameStatus.TURN_TRANSITION,
+            finishedAtEpochMillis = if (advance.finished) System.currentTimeMillis() else null
         )
     }
 

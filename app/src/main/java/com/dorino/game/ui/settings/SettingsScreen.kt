@@ -1,8 +1,10 @@
 package com.dorino.game.ui.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -11,6 +13,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -30,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dorino.game.R
 import com.dorino.game.data.model.GameSettings
+import com.dorino.game.data.model.TurnStyle
 import com.dorino.game.data.model.WordCategory
 import com.dorino.game.ui.theme.DorinoOnSurfaceMuted
 import com.dorino.game.ui.theme.DorinoPrimary
@@ -103,6 +108,23 @@ fun SettingsScreen(
         }
 
         item {
+            Text(stringResource(R.string.settings_turn_style), color = DorinoOnSurfaceMuted, fontSize = 14.sp)
+            Spacer(Modifier.height(8.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                TurnStyle.entries.forEach { style ->
+                    val titleRes = if (style == TurnStyle.RALLY) R.string.turn_style_rally else R.string.turn_style_rotating
+                    val descRes = if (style == TurnStyle.RALLY) R.string.turn_style_rally_desc else R.string.turn_style_rotating_desc
+                    TurnStyleOption(
+                        title = stringResource(titleRes),
+                        description = stringResource(descRes),
+                        selected = settings.turnStyle == style,
+                        onClick = { onUpdate { it.copy(turnStyle = style) } }
+                    )
+                }
+            }
+        }
+
+        item {
             Text(stringResource(R.string.settings_round_count), color = DorinoOnSurfaceMuted, fontSize = 14.sp)
             Spacer(Modifier.height(8.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -152,6 +174,47 @@ private fun SettingsSwitchRow(label: String, checked: Boolean, onToggle: () -> U
             checked = checked,
             onCheckedChange = { onToggle() },
             colors = SwitchDefaults.colors(checkedTrackColor = DorinoPrimary)
+        )
+    }
+}
+
+@Composable
+private fun TurnStyleOption(
+    title: String,
+    description: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(if (selected) DorinoPrimary.copy(alpha = 0.18f) else DorinoSurfaceElevated)
+            .border(
+                width = 1.dp,
+                color = if (selected) DorinoPrimary else Color.White.copy(alpha = 0.08f),
+                shape = RoundedCornerShape(18.dp)
+            )
+            .clickable(onClick = onClick)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(2.dp))
+            Text(description, color = DorinoOnSurfaceMuted, fontSize = 12.sp, lineHeight = 17.sp)
+        }
+        Spacer(Modifier.width(10.dp))
+        Box(
+            modifier = Modifier
+                .size(20.dp)
+                .clip(CircleShape)
+                .background(if (selected) DorinoPrimary else Color.Transparent)
+                .border(
+                    width = 2.dp,
+                    color = if (selected) DorinoPrimary else Color.White.copy(alpha = 0.3f),
+                    shape = CircleShape
+                )
         )
     }
 }

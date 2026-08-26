@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dorino.game.R
 import com.dorino.game.data.model.GameState
+import com.dorino.game.data.model.TurnStyle
 import com.dorino.game.ui.components.GradientButton
 import com.dorino.game.ui.components.TimerRing
 import com.dorino.game.ui.theme.DorinoError
@@ -74,11 +75,22 @@ fun GamePlayScreen(
                     Text(it.name, color = teamColor, fontSize = 13.sp)
                 }
             }
-            Text(
-                text = stringResource(R.string.round_label, state.round),
-                color = Color.White.copy(alpha = 0.5f),
-                fontSize = 13.sp
-            )
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = stringResource(R.string.round_label, state.round),
+                    color = Color.White.copy(alpha = 0.5f),
+                    fontSize = 13.sp
+                )
+                Text(
+                    text = if (state.settings.turnStyle == TurnStyle.ROTATING)
+                        stringResource(R.string.turn_style_rotating)
+                    else
+                        stringResource(R.string.turn_style_rally),
+                    color = teamColor.copy(alpha = 0.8f),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
 
         Spacer(Modifier.height(20.dp))

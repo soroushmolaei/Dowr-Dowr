@@ -134,10 +134,27 @@ class GameViewModel(
     fun markCorrect() {
         val state = _gameState.value ?: return
         if (state.status != GameStatus.IN_PROGRESS) return
+        val previousPlayerId = state.currentPlayer?.id
         val updated = GameEngine.markCorrect(state)
         _gameState.value = updated
         soundManager.play(SoundEffect.CORRECT, _settings.value.soundEnabled)
         soundManager.vibrate(_settings.value.vibrationEnabled)
+
+        val playerChanged = updated.currentPlayer?.id != previousPlayerId
+
+        when {
+            updated.status == GameStatus.FINISHED -> {
+                // در حالت دست‌به‌دست ممکن است بازی دقیقاً با یک پاسخ صحیح تمام شود.
+                timerJob?.cancel()
+                persist(updated)
+                onGameFinished(updated)
+            }
+            playerChanged -> {
+                // دست‌به‌دست: نوبت عوض شد؛ صدای انتقال نوبت پخش و وضعیت ذخیره می‌شود.
+                soundManager.play(SoundEffect.TURN_CHANGE, _settings.value.soundEnabled)
+                persist(updated)
+            }
+        }
     }
 
     fun markPass() {
