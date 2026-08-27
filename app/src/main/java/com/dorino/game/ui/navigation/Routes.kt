@@ -6,6 +6,7 @@ object Routes {
     const val GAME_OPTIONS = "game_options"
     const val PLAYER_COUNT = "player_count"
     const val PLAYER_NAMES = "player_names"
+    const val SEATING = "seating"
     const val TURN_TRANSITION = "turn_transition"
     const val GAMEPLAY = "gameplay"
     const val GAME_RESULT = "game_result"

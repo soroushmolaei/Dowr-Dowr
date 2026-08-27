@@ -16,6 +16,7 @@ data class Team(
     val playerIds: List<Int>,
     val score: Int = 0,
     val savedTimeSeconds: Int = 0,
+    val activeTimeSeconds: Int = 0,
     val correctCount: Int = 0,
     val passCount: Int = 0
 )

@@ -50,8 +50,12 @@ class GameViewModel(
     private val _lastResult = MutableStateFlow<GameResult?>(null)
     val lastResult: StateFlow<GameResult?> = _lastResult.asStateFlow()
 
+    private val _passCooldownRemaining = MutableStateFlow(0)
+    val passCooldownRemaining: StateFlow<Int> = _passCooldownRemaining.asStateFlow()
+
     private var timerJob: Job? = null
     private var beepJob: Job? = null
+    private var passCooldownJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -107,6 +111,7 @@ class GameViewModel(
         val updated = GameEngine.startTurn(state)
         _gameState.value = updated
         persist(updated)
+        resetPassCooldown()
         startTimerLoop()
         startBeepLoop()
     }
@@ -180,23 +185,51 @@ class GameViewModel(
                 // در حالت دست‌به‌دست ممکن است بازی دقیقاً با یک پاسخ صحیح تمام شود.
                 timerJob?.cancel()
                 beepJob?.cancel()
+                resetPassCooldown()
                 persist(updated)
                 onGameFinished(updated)
             }
             playerChanged -> {
                 // دست‌به‌دست: نوبت عوض شد؛ صدای انتقال نوبت پخش و وضعیت ذخیره می‌شود.
                 soundManager.play(SoundEffect.TURN_CHANGE, _settings.value.soundEnabled)
+                resetPassCooldown()
                 persist(updated)
             }
         }
     }
 
+    /** فاصله‌ی زمانی اجباری بعد از «رد شو» تا از رد کردن پی‌درپی و بی‌رویه‌ی کلمات جلوگیری شود. */
     fun markPass() {
         val state = _gameState.value ?: return
         if (state.status != GameStatus.IN_PROGRESS) return
+        if (_passCooldownRemaining.value > 0) return
         val updated = GameEngine.markPass(state)
         _gameState.value = updated
         soundManager.play(SoundEffect.PASS, _settings.value.soundEnabled)
+        startPassCooldown()
+    }
+
+    private fun startPassCooldown() {
+        passCooldownJob?.cancel()
+        val cooldown = _settings.value.passCooldownSeconds
+        if (cooldown <= 0) {
+            _passCooldownRemaining.value = 0
+            return
+        }
+        _passCooldownRemaining.value = cooldown
+        passCooldownJob = viewModelScope.launch {
+            var remaining = cooldown
+            while (remaining > 0) {
+                delay(1000)
+                remaining -= 1
+                _passCooldownRemaining.value = remaining
+            }
+        }
+    }
+
+    private fun resetPassCooldown() {
+        passCooldownJob?.cancel()
+        _passCooldownRemaining.value = 0
     }
 
     fun finishTurnManually() {
@@ -206,6 +239,7 @@ class GameViewModel(
     private fun finishTurn() {
         timerJob?.cancel()
         beepJob?.cancel()
+        resetPassCooldown()
         val state = _gameState.value ?: return
         val timedOut = state.settings.timerDurationSeconds != 0 && state.timeRemainingSeconds <= 0
         val updated = GameEngine.endTurn(state)
@@ -248,6 +282,7 @@ class GameViewModel(
     fun clearFinishedGame() {
         timerJob?.cancel()
         beepJob?.cancel()
+        passCooldownJob?.cancel()
         _gameState.value = null
         _lastResult.value = null
         viewModelScope.launch { store.clearGameState() }
@@ -259,6 +294,7 @@ class GameViewModel(
         if (state.status == GameStatus.IN_PROGRESS) {
             timerJob?.cancel()
             beepJob?.cancel()
+            passCooldownJob?.cancel()
             val resumed = state.copy(status = GameStatus.TURN_TRANSITION, currentWord = null)
             _gameState.value = resumed
             persist(resumed)
@@ -288,6 +324,7 @@ class GameViewModel(
         super.onCleared()
         timerJob?.cancel()
         beepJob?.cancel()
+        passCooldownJob?.cancel()
         soundManager.release()
     }
 

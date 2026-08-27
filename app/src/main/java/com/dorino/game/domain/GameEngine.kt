@@ -84,7 +84,13 @@ object GameEngine {
     fun tickTimer(state: GameState): GameState {
         if (state.settings.timerDurationSeconds == 0) return state
         val newTime = (state.timeRemainingSeconds - 1).coerceAtLeast(0)
-        return state.copy(timeRemainingSeconds = newTime)
+        val activeTeamId = state.currentPlayer?.teamId
+        val updatedTeams = if (activeTeamId != null) {
+            state.teams.map {
+                if (it.id == activeTeamId) it.copy(activeTimeSeconds = it.activeTimeSeconds + 1) else it
+            }
+        } else state.teams
+        return state.copy(timeRemainingSeconds = newTime, teams = updatedTeams)
     }
 
     fun markCorrect(state: GameState): GameState {

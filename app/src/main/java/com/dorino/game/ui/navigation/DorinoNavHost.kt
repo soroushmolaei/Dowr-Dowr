@@ -18,6 +18,7 @@ import com.dorino.game.ui.modeselect.ModeSelectScreen
 import com.dorino.game.ui.playercount.PlayerCountScreen
 import com.dorino.game.ui.playernames.PlayerNamesScreen
 import com.dorino.game.ui.roundresult.GameResultScreen
+import com.dorino.game.ui.seating.SeatingScreen
 import com.dorino.game.ui.settings.SettingsScreen
 import com.dorino.game.ui.turntransition.TurnTransitionScreen
 import com.dorino.game.ui.tutorial.TutorialScreen
@@ -31,6 +32,7 @@ fun DorinoNavHost(viewModel: GameViewModel) {
     val setupDraft by viewModel.setupDraft.collectAsState()
     val history by viewModel.history.collectAsState()
     val lastResult by viewModel.lastResult.collectAsState()
+    val passCooldownRemaining by viewModel.passCooldownRemaining.collectAsState()
 
     NavHost(navController = navController, startDestination = Routes.HOME) {
 
@@ -84,12 +86,28 @@ fun DorinoNavHost(viewModel: GameViewModel) {
                 onConfirm = { names ->
                     viewModel.setPlayerNames(names)
                     viewModel.startNewGame()
-                    navController.navigate(Routes.TURN_TRANSITION) {
+                    navController.navigate(Routes.SEATING) {
                         popUpTo(Routes.HOME)
                     }
                 },
                 onBack = { navController.popBackStack() }
             )
+        }
+
+        composable(Routes.SEATING) {
+            val state = gameState
+            if (state == null) {
+                LaunchedEffect(Unit) { navController.navigate(Routes.HOME) { popUpTo(Routes.HOME) { inclusive = true } } }
+            } else {
+                SeatingScreen(
+                    state = state,
+                    onContinue = {
+                        navController.navigate(Routes.TURN_TRANSITION) {
+                            popUpTo(Routes.SEATING) { inclusive = true }
+                        }
+                    }
+                )
+            }
         }
 
         composable(Routes.TURN_TRANSITION) {
@@ -121,6 +139,7 @@ fun DorinoNavHost(viewModel: GameViewModel) {
             } else {
                 GamePlayScreen(
                     state = state,
+                    passCooldownRemaining = passCooldownRemaining,
                     onCorrect = viewModel::markCorrect,
                     onPass = viewModel::markPass,
                     onFinishTurnManually = viewModel::finishTurnManually

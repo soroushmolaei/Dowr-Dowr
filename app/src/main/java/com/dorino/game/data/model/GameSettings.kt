@@ -14,10 +14,12 @@ data class GameSettings(
     val roundCount: Int = 3,
     val privacyModeEnabled: Boolean = false,
     val turnStyle: TurnStyle = TurnStyle.RALLY,
+    val passCooldownSeconds: Int = 5,
     val language: String = "fa"
 ) {
     companion object {
         val TIMER_OPTIONS = listOf(30, 45, 60, 90, 120, 180, 0)
         val ROUND_OPTIONS = listOf(1, 2, 3, 4, 5, 6)
+        val PASS_COOLDOWN_OPTIONS = listOf(0, 3, 5, 8, 10)
     }
 }

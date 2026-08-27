@@ -125,6 +125,19 @@ fun GameOptionsScreen(
             }
 
             item {
+                Text(stringResource(R.string.settings_pass_cooldown), color = DorinoOnSurfaceMuted, fontSize = 14.sp)
+                Spacer(Modifier.height(8.dp))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    GameSettings.PASS_COOLDOWN_OPTIONS.forEach { seconds ->
+                        val label = if (seconds == 0) stringResource(R.string.pass_cooldown_disabled) else "${seconds}s"
+                        OptionChip(text = label, selected = settings.passCooldownSeconds == seconds) {
+                            onUpdate { it.copy(passCooldownSeconds = seconds) }
+                        }
+                    }
+                }
+            }
+
+            item {
                 Text(stringResource(R.string.settings_turn_style), color = DorinoOnSurfaceMuted, fontSize = 14.sp)
                 Spacer(Modifier.height(8.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

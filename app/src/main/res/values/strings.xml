@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">دورینو</string>
+    <string name="app_name">دُور دُور</string>
     <string name="app_tagline">بازی کن، حدس بزن، برنده شو!</string>
 
     <!-- صفحه اصلی -->
@@ -30,6 +30,10 @@
 
     <!-- نام بازیکنان -->
     <string name="player_names_title">نام بازیکنان</string>
+    <string name="seating_title">به این ترتیب بشینید</string>
+    <string name="seating_subtitle_alternating">بازیکنان یکی‌درمیان دور میز می‌نشینند تا هم‌تیمی‌ها روبه‌روی هم نباشند.</string>
+    <string name="seating_subtitle_pairs">هر خط نقطه‌چین، یک تیم را نشان می‌دهد؛ هر بازیکن روبه‌روی هم‌تیمی خودش می‌نشیند.</string>
+    <string name="seating_continue">بریم!</string>
     <string name="player_name_hint">بازیکن %1$d</string>
     <string name="use_random_names">استفاده از نام تصادفی</string>
     <string name="randomize_teams">ترتیب رندوم</string>
@@ -49,6 +53,8 @@
     <!-- بازی -->
     <string name="correct_button">درست بود</string>
     <string name="pass_word_button">رد شو</string>
+    <string name="pass_word_button_cooldown">رد شو (%1$d)</string>
+    <string name="next_player_label">بعدی: %1$s</string>
     <string name="time_left">زمان باقی‌مانده</string>
     <string name="score_label">امتیاز</string>
     <string name="round_label">دور %1$d</string>
@@ -81,6 +87,8 @@
     <string name="difficulty_hard">سخت</string>
     <string name="settings_round_count">تعداد دورها</string>
     <string name="settings_turn_style">شیوه‌ی نوبت‌گیری</string>
+    <string name="settings_pass_cooldown">فاصله‌ی بین رد شدن از کلمات</string>
+    <string name="pass_cooldown_disabled">بدون فاصله</string>
     <string name="turn_style_rally">رالی</string>
     <string name="turn_style_rally_desc">هرکی جواب بده، نوبتش رو نگه می‌داره تا زمان تمام بشه.</string>
     <string name="turn_style_rotating">دست‌به‌دست</string>

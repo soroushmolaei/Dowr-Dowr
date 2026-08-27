@@ -35,12 +35,14 @@ import com.dorino.game.data.model.TurnStyle
 import com.dorino.game.ui.components.GradientButton
 import com.dorino.game.ui.components.TimerRing
 import com.dorino.game.ui.theme.DorinoError
+import com.dorino.game.ui.theme.DorinoOnSurfaceMuted
 import com.dorino.game.ui.theme.DorinoSuccess
 import com.dorino.game.ui.theme.DorinoSurfaceElevated
 
 @Composable
 fun GamePlayScreen(
     state: GameState,
+    passCooldownRemaining: Int,
     onCorrect: () -> Unit,
     onPass: () -> Unit,
     onFinishTurnManually: () -> Unit
@@ -51,6 +53,10 @@ fun GamePlayScreen(
     } ?: MaterialTheme.colorScheme.primary
     val isUnlimited = state.settings.timerDurationSeconds == 0
 
+    val nextPlayer = if (state.players.isNotEmpty()) {
+        state.players[(state.currentPlayerIndex + 1) % state.players.size]
+    } else null
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -59,27 +65,18 @@ fun GamePlayScreen(
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.Top
         ) {
             Column {
-                Text(
-                    text = stringResource(
-                        R.string.turn_of_player,
-                        state.currentPlayer?.name ?: ""
-                    ),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
                 team?.let {
-                    Text(it.name, color = teamColor, fontSize = 13.sp)
+                    Text(it.name, color = teamColor, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     text = stringResource(R.string.round_label, state.round),
                     color = Color.White.copy(alpha = 0.5f),
-                    fontSize = 13.sp
+                    fontSize = 12.sp
                 )
                 Text(
                     text = if (state.settings.turnStyle == TurnStyle.ROTATING)
@@ -90,10 +87,18 @@ fun GamePlayScreen(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium
                 )
+                if (nextPlayer != null) {
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = stringResource(R.string.next_player_label, nextPlayer.name),
+                        color = Color.White.copy(alpha = 0.55f),
+                        fontSize = 11.sp
+                    )
+                }
             }
         }
 
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(18.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -105,8 +110,8 @@ fun GamePlayScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(t.name, fontSize = 12.sp, color = c)
                     Text(
-                        t.score.toString(),
-                        fontSize = 22.sp,
+                        formatMmSs(t.activeTimeSeconds),
+                        fontSize = 20.sp,
                         fontWeight = FontWeight.Black,
                         color = Color.White
                     )
@@ -115,6 +120,16 @@ fun GamePlayScreen(
         }
 
         Spacer(Modifier.weight(1f))
+
+        Text(
+            text = state.currentPlayer?.name ?: "",
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(Modifier.height(10.dp))
 
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             TimerRing(
@@ -154,12 +169,22 @@ fun GamePlayScreen(
         Spacer(Modifier.weight(1f))
 
         if (isUnlimited) {
-            GradientButton(
-                text = stringResource(R.string.correct_button),
-                onClick = onCorrect,
-                modifier = Modifier.fillMaxWidth(),
-                colors = listOf(DorinoSuccess, DorinoSuccess)
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                PassButton(
+                    cooldownRemaining = passCooldownRemaining,
+                    onClick = onPass,
+                    modifier = Modifier.weight(1f)
+                )
+                GradientButton(
+                    text = stringResource(R.string.correct_button),
+                    onClick = onCorrect,
+                    modifier = Modifier.weight(1f),
+                    colors = listOf(DorinoSuccess, DorinoSuccess.copy(alpha = 0.85f))
+                )
+            }
             Spacer(Modifier.height(10.dp))
             GradientButton(
                 text = "پایان نوبت",
@@ -172,11 +197,10 @@ fun GamePlayScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                GradientButton(
-                    text = stringResource(R.string.pass_word_button),
+                PassButton(
+                    cooldownRemaining = passCooldownRemaining,
                     onClick = onPass,
-                    modifier = Modifier.weight(1f),
-                    colors = listOf(DorinoError.copy(alpha = 0.85f), DorinoError)
+                    modifier = Modifier.weight(1f)
                 )
                 GradientButton(
                     text = stringResource(R.string.correct_button),
@@ -198,4 +222,27 @@ fun GamePlayScreen(
             )
         }
     }
+}
+
+@Composable
+private fun PassButton(cooldownRemaining: Int, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val onCooldown = cooldownRemaining > 0
+    Column(modifier = modifier) {
+        GradientButton(
+            text = if (onCooldown)
+                stringResource(R.string.pass_word_button_cooldown, cooldownRemaining)
+            else
+                stringResource(R.string.pass_word_button),
+            onClick = onClick,
+            enabled = !onCooldown,
+            modifier = Modifier.fillMaxWidth(),
+            colors = listOf(DorinoError.copy(alpha = 0.85f), DorinoError)
+        )
+    }
+}
+
+private fun formatMmSs(totalSeconds: Int): String {
+    val m = totalSeconds / 60
+    val s = totalSeconds % 60
+    return "%d:%02d".format(m, s)
 }
