@@ -111,7 +111,7 @@ class GameViewModel(
         val updated = GameEngine.startTurn(state)
         _gameState.value = updated
         persist(updated)
-        resetPassCooldown()
+        startPassCooldown()
         startTimerLoop()
         startBeepLoop()
     }
@@ -190,10 +190,14 @@ class GameViewModel(
                 onGameFinished(updated)
             }
             playerChanged -> {
-                // دست‌به‌دست: نوبت عوض شد؛ صدای انتقال نوبت پخش و وضعیت ذخیره می‌شود.
+                // دست‌به‌دست: نوبت عوض شد؛ کلمه‌ی جدید هم کول‌داون تازه‌ی خودش را می‌خواهد.
                 soundManager.play(SoundEffect.TURN_CHANGE, _settings.value.soundEnabled)
-                resetPassCooldown()
+                startPassCooldown()
                 persist(updated)
+            }
+            else -> {
+                // رالی: همان بازیکن با کلمه‌ی جدید ادامه می‌دهد؛ برای این کلمه‌ی جدید هم کول‌داون از نو شروع می‌شود.
+                startPassCooldown()
             }
         }
     }
