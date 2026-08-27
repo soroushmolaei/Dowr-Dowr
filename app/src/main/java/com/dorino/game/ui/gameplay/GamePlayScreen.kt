@@ -4,6 +4,8 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -87,14 +89,6 @@ fun GamePlayScreen(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium
                 )
-                if (nextPlayer != null) {
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        text = stringResource(R.string.next_player_label, nextPlayer.name),
-                        color = Color.White.copy(alpha = 0.55f),
-                        fontSize = 11.sp
-                    )
-                }
             }
         }
 
@@ -121,14 +115,43 @@ fun GamePlayScreen(
 
         Spacer(Modifier.weight(1f))
 
-        Text(
-            text = state.currentPlayer?.name ?: "",
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
-        )
+        AnimatedContent(
+            targetState = state.currentPlayerIndex,
+            transitionSpec = {
+                (slideInVertically(tween(320)) { h -> h } + fadeIn(tween(320))) togetherWith
+                    (slideOutVertically(tween(320)) { h -> -h } + fadeOut(tween(200)))
+            },
+            modifier = Modifier.fillMaxWidth(),
+            label = "playerHandoff"
+        ) { _ ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = state.currentPlayer?.name ?: "",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Black,
+                    color = Color.White,
+                    maxLines = 1
+                )
+                if (nextPlayer != null) {
+                    Text(
+                        text = "   ←   ",
+                        fontSize = 16.sp,
+                        color = Color.White.copy(alpha = 0.35f)
+                    )
+                    Text(
+                        text = nextPlayer.name,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White.copy(alpha = 0.6f),
+                        maxLines = 1
+                    )
+                }
+            }
+        }
         Spacer(Modifier.height(10.dp))
 
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
