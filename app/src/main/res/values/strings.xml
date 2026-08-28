@@ -35,7 +35,6 @@
     <string name="seating_subtitle_pairs">هر خط نقطه‌چین، یک تیم را نشان می‌دهد؛ هر بازیکن روبه‌روی هم‌تیمی خودش می‌نشیند.</string>
     <string name="seating_continue">بریم!</string>
     <string name="player_name_hint">بازیکن %1$d</string>
-    <string name="use_random_names">استفاده از نام تصادفی</string>
     <string name="randomize_teams">ترتیب رندوم</string>
     <string name="randomize_teams_hint">ترتیب نشستن و تیم‌بندی رو به‌صورت تصادفی به هم می‌ریزه.</string>
     <string name="start_game_button">شروع بازی</string>

@@ -2,7 +2,6 @@ package com.dorino.game.ui.playernames
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,12 +30,6 @@ import com.dorino.game.ui.components.GradientButton
 import com.dorino.game.ui.components.SecondaryPill
 import com.dorino.game.ui.theme.DorinoError
 import com.dorino.game.ui.theme.DorinoOnSurfaceMuted
-
-private val RANDOM_FIRST_NAMES = listOf(
-    "سروش", "علی", "مریم", "نگار", "امیر", "سارا", "رضا", "پریسا",
-    "حسین", "الهام", "بابک", "شیوا", "کیان", "ندا", "آرش", "لیلا",
-    "پویا", "مهسا", "دانیال", "یاسمن", "فرهاد", "ترانه", "بهروز", "رویا"
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,21 +60,10 @@ fun PlayerNamesScreen(
             color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(Modifier.height(6.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            SecondaryPill(
-                text = stringResource(R.string.use_random_names),
-                onClick = {
-                    val shuffled = RANDOM_FIRST_NAMES.shuffled()
-                    names = (0 until playerCount).map { i ->
-                        shuffled.getOrElse(i % shuffled.size) { "بازیکن ${i + 1}" }
-                    }
-                }
-            )
-            SecondaryPill(
-                text = stringResource(R.string.randomize_teams),
-                onClick = { names = names.shuffled() }
-            )
-        }
+        SecondaryPill(
+            text = stringResource(R.string.randomize_teams),
+            onClick = { names = names.shuffled() }
+        )
         Spacer(Modifier.height(6.dp))
         Text(
             text = stringResource(R.string.randomize_teams_hint),
