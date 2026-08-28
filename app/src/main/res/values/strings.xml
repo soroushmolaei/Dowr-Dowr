@@ -85,6 +85,8 @@
     <string name="difficulty_easy">آسان</string>
     <string name="difficulty_medium">متوسط</string>
     <string name="difficulty_hard">سخت</string>
+    <string name="difficulty_catastrophe">فاجعه</string>
+    <string name="difficulty_random">رندوم</string>
     <string name="settings_round_count">تعداد دورها</string>
     <string name="settings_turn_style">شیوه‌ی نوبت‌گیری</string>
     <string name="settings_pass_cooldown">فاصله‌ی بین رد شدن از کلمات</string>

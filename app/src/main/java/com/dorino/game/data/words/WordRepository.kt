@@ -17,6 +17,7 @@ object WordRepository {
     private fun e(text: String) = text to Difficulty.EASY
     private fun m(text: String) = text to Difficulty.MEDIUM
     private fun h(text: String) = text to Difficulty.HARD
+    private fun c(text: String) = text to Difficulty.CATASTROPHE
 
     private val rawWords: Map<WordCategory, List<Pair<String, Difficulty>>> = mapOf(
         WordCategory.GENERAL to listOf(
@@ -34,7 +35,7 @@ object WordRepository {
             m("فردوسی"), e("حافظ"), e("مولانا"), m("ابن سینا"), e("انیشتین"), m("پیکاسو"), m("بتهوون"),
             m("گاندی"), m("نلسون ماندلا"), m("چارلی چاپلین"), h("مریم میرزاخانی"), m("امیرکبیر"),
             m("داوینچی"), m("نیوتن"), h("مارکوپولو"), m("کوروش بزرگ"), h("داریوش بزرگ"), m("ادیسون"),
-            m("موزارت"), m("شکسپیر")
+            m("موزارت"), m("شکسپیر"), c("کورت گودل"), c("لودویگ ویتگنشتاین"), c("ژاک دریدا"), c("مارتین هایدگر")
         ),
         WordCategory.FOOD to listOf(
             e("کباب کوبیده"), e("قورمه‌سبزی"), m("فسنجان"), m("زرشک‌پلو"), m("آش رشته"), m("دلمه"),
@@ -72,7 +73,8 @@ object WordRepository {
             m("هوش مصنوعی"), e("رایانه"), e("اینترنت"), e("گوشی هوشمند"), e("ربات"), m("پهپاد"),
             m("ماهواره"), m("بلوتوث"), h("رمزارز"), h("واقعیت مجازی"), h("چاپگر سه‌بعدی"),
             e("باتری"), e("وای‌فای"), m("صفحه لمسی"), m("هدفون بی‌سیم"), m("نرم‌افزار"),
-            h("پردازنده"), m("حافظه فلش"), m("دوربین دیجیتال"), m("خودروی برقی")
+            h("پردازنده"), m("حافظه فلش"), m("دوربین دیجیتال"), m("خودروی برقی"),
+            c("محاسبات کوانتومی"), c("رمزنگاری پساکوانتومی")
         ),
         WordCategory.SPORTS to listOf(
             e("فوتبال"), e("والیبال"), e("بسکتبال"), e("کشتی"), m("وزنه‌برداری"), e("شنا"),
@@ -83,12 +85,16 @@ object WordRepository {
             e("چهارشنبه‌سوری"), e("نوروز"), e("یلدا"), e("سیزده‌به‌در"), e("فرش ایرانی"),
             m("چای و قند"), m("حافظ‌خوانی"), m("آجیل شب یلدا"), e("هفت‌سین"), m("تخت‌جمشید"),
             m("دورهمی خانوادگی"), m("مهمانی ایرانی"), m("شعرخوانی"), m("باغ ایرانی"),
-            m("سفره عقد"), e("عروسی ایرانی"), m("قالی‌بافی"), h("میناکاری"), h("خوشنویسی فارسی")
+            m("سفره عقد"), e("عروسی ایرانی"), m("قالی‌بافی"), h("میناکاری"), h("خوشنویسی فارسی"),
+            c("وحدت وجود"), c("حکمت متعالیه")
         ),
         WordCategory.HARD to listOf(
             m("فلسفه"), m("دموکراسی"), m("بی‌نهایت"), h("نسبیت"), m("وجدان"), m("عدالت"),
             m("آزادی"), m("سرنوشت"), h("تناقض"), h("ناخودآگاه"), h("دیالکتیک"), h("پارادوکس"),
-            h("استعاره"), h("انتزاع"), h("پدیدارشناسی"), h("جبر تاریخی"), h("آنتروپی"), m("تکامل")
+            h("استعاره"), h("انتزاع"), h("پدیدارشناسی"), h("جبر تاریخی"), h("آنتروپی"), m("تکامل"),
+            c("پارادوکس زنون"), c("اصل عدم‌قطعیت"), c("قضیه ناتمامیت گودل"), c("سولیپسیسم"),
+            c("اگزیستانسیالیسم"), c("نیهیلیسم"), c("ساختارشکنی"), c("تکینگی گرانشی"),
+            c("درهم‌تنیدگی کوانتومی"), c("برهان هستی‌شناختی"), c("جبر و اختیار"), c("فروپاشی تابع موج")
         ),
         WordCategory.EASY to listOf(
             e("آب"), e("نان"), e("خورشید"), e("ماه"), e("گربه"), e("سگ"), e("توپ"), e("مداد"),
@@ -107,13 +113,17 @@ object WordRepository {
         words.map { (text, difficulty) -> Word(text, category, difficulty) }
     }
 
-    fun wordsForFilters(categories: Set<WordCategory>, difficulties: Set<Difficulty>): List<Word> {
+    fun wordsForFilters(categories: Set<WordCategory>, difficulty: Difficulty): List<Word> {
         val effectiveCategories = categories.ifEmpty { WordCategory.entries.toSet() }
-        val effectiveDifficulties = difficulties.ifEmpty { Difficulty.entries.toSet() }
+        val effectiveDifficulties = if (difficulty == Difficulty.RANDOM) {
+            setOf(Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD, Difficulty.CATASTROPHE)
+        } else {
+            setOf(difficulty)
+        }
         return rawWords.filterKeys { it in effectiveCategories }
             .flatMap { (category, words) ->
-                words.filter { (_, difficulty) -> difficulty in effectiveDifficulties }
-                    .map { (text, difficulty) -> Word(text, category, difficulty) }
+                words.filter { (_, d) -> d in effectiveDifficulties }
+                    .map { (text, d) -> Word(text, category, d) }
             }
     }
 }

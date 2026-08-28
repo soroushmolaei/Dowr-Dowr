@@ -154,15 +154,11 @@ fun SettingsScreen(
             Spacer(Modifier.height(8.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Difficulty.entries.forEach { difficulty ->
-                    val selected = difficulty in settings.selectedDifficulties
                     OptionChip(
                         text = stringResource(difficulty.labelRes),
-                        selected = selected
+                        selected = settings.selectedDifficulty == difficulty
                     ) {
-                        onUpdate {
-                            val newSet = if (selected) it.selectedDifficulties - difficulty else it.selectedDifficulties + difficulty
-                            it.copy(selectedDifficulties = if (newSet.isEmpty()) it.selectedDifficulties else newSet)
-                        }
+                        onUpdate { it.copy(selectedDifficulty = difficulty) }
                     }
                 }
             }

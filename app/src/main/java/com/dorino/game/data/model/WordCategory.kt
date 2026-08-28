@@ -22,12 +22,15 @@ enum class WordCategory(val labelRes: Int) {
     FUNNY(R.string.category_funny)
 }
 
-/** درجه سختی مستقل از دسته‌بندی؛ هر کلمه در هر دسته‌ای می‌تواند هرکدام از این سطوح را داشته باشد. */
+/** درجه سختی مستقل از دسته‌بندی؛ هر کلمه در هر دسته‌ای می‌تواند هرکدام از این سطوح را داشته باشد.
+ * RANDOM یک گزینه‌ی واقعی روی کلمات نیست؛ فقط برای انتخاب کاربر است و یعنی «از همه‌ی سطوح». */
 @Serializable
 enum class Difficulty(val labelRes: Int) {
     EASY(R.string.difficulty_easy),
     MEDIUM(R.string.difficulty_medium),
-    HARD(R.string.difficulty_hard)
+    HARD(R.string.difficulty_hard),
+    CATASTROPHE(R.string.difficulty_catastrophe),
+    RANDOM(R.string.difficulty_random)
 }
 
 @Serializable
