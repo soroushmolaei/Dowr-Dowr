@@ -17,12 +17,19 @@ data class GameResult(
     val totalCorrect: Int,
     val totalPass: Int,
     val totalSavedTimeSeconds: Int,
-    val durationSeconds: Long
+    val durationSeconds: Long,
+    val wasSurvivorMode: Boolean
 )
 
 /**
  * منطق خالص بازی: بدون وابستگی به Android UI یا Coroutine.
  * تمام قوانین مربوط به نوبت، امتیاز و پایان بازی اینجا متمرکز شده‌اند.
+ *
+ * حالت سرویوایور (فقط شیوه‌ی «دست‌به‌دست» + تایمر محدود):
+ * هر تیم یک «موجودی زمان» کلی برابر با مدت تایمر انتخاب‌شده دارد که هرگز ریست نمی‌شود.
+ * وقتی موجودی یک تیم صفر شود، آن تیم حذف می‌شود و نوبت بی‌وقفه به نفرِ زنده‌ی بعدی می‌رسد.
+ * وقتی فقط یک تیم زنده بماند، همان تیم برنده‌ی بازی است؛ تعداد دور در این حالت فقط
+ * یک شمارنده‌ی نمایشی است که بر اساس آستانه‌های زمانیِ متناسب با تعداد دور پیش می‌رود.
  */
 object GameEngine {
 
@@ -65,7 +72,6 @@ object GameEngine {
             val chosen = available.random()
             chosen.text to (state.usedWords + chosen.text)
         } else {
-            // همه کلمات استفاده شده‌اند؛ مجموعه بازنشانی می‌شود تا بازی متوقف نشود.
             val chosen = pool.random()
             chosen.text to setOf(chosen.text)
         }
@@ -81,16 +87,52 @@ object GameEngine {
         )
     }
 
+    /**
+     * تیک هر ثانیه‌ی تایمر. در حالت سرویوایور، این تابع علاوه بر شمارش معکوس مسئول
+     * تشخیص حذف تیم، انتقال بی‌وقفه‌ی نوبت به نفر زنده‌ی بعدی، پیشرفت شماره‌ی دور
+     * بر اساس آستانه‌های زمانی، و پایان بازی وقتی فقط یک تیم زنده بماند نیز هست.
+     */
     fun tickTimer(state: GameState): GameState {
         if (state.settings.timerDurationSeconds == 0) return state
+        val bank = state.settings.timerDurationSeconds
+
         val newTime = (state.timeRemainingSeconds - 1).coerceAtLeast(0)
         val activeTeamId = state.currentPlayer?.teamId
         val updatedTeams = if (activeTeamId != null) {
             state.teams.map {
-                if (it.id == activeTeamId) it.copy(activeTimeSeconds = it.activeTimeSeconds + 1) else it
+                if (it.id == activeTeamId) it.copy(activeTimeSeconds = (it.activeTimeSeconds + 1).coerceAtMost(bank)) else it
             }
         } else state.teams
-        return state.copy(timeRemainingSeconds = newTime, teams = updatedTeams)
+
+        var working = state.copy(timeRemainingSeconds = newTime, teams = updatedTeams)
+
+        if (!working.isSurvivorMode) return working
+
+        val aliveTeamIds = updatedTeams.filter { it.activeTimeSeconds < bank }.map { it.id }.toSet()
+
+        if (aliveTeamIds.size <= 1) {
+            return working.copy(
+                status = GameStatus.FINISHED,
+                currentWord = null,
+                finishedAtEpochMillis = System.currentTimeMillis()
+            )
+        }
+
+        if (activeTeamId != null && activeTeamId !in aliveTeamIds) {
+            working = passToNextAliveSeamlessly(working, aliveTeamIds)
+        }
+
+        while (working.round < working.totalRounds) {
+            val thresholdSeconds = bank * (working.totalRounds - working.round) / working.totalRounds
+            val teamsAboveThreshold = working.teams.count { (bank - it.activeTimeSeconds) > thresholdSeconds }
+            if (teamsAboveThreshold <= 1) {
+                working = working.copy(round = working.round + 1)
+            } else {
+                break
+            }
+        }
+
+        return working
     }
 
     fun markCorrect(state: GameState): GameState {
@@ -105,12 +147,10 @@ object GameEngine {
 
         return when (state.settings.turnStyle) {
             TurnStyle.RALLY -> {
-                // رالی: همان بازیکن با کلمه‌ی جدید ادامه می‌دهد تا زمان تمام شود.
                 val (word, usedWords) = pickWord(scored)
                 scored.copy(currentWord = word, usedWords = usedWords)
             }
             TurnStyle.ROTATING -> {
-                // دست‌به‌دست: بلافاصله نوبت به نفر بعدی می‌رسد، بدون ریست شدن تایمر.
                 passToNextPlayerSeamlessly(scored)
             }
         }
@@ -133,7 +173,6 @@ object GameEngine {
         )
     }
 
-    /** نتیجه‌ی رفتن به بازیکن بعدی در دور میز، مستقل از این‌که تایمر ریست شود یا نه. */
     private data class Advance(
         val players: List<Player>,
         val nextIndex: Int,
@@ -142,13 +181,23 @@ object GameEngine {
     )
 
     private fun advanceToNextPlayer(state: GameState): Advance {
-        val playersDeactivated = state.players.map { it.copy(isActive = false) }
-        val nextIndex = (state.currentPlayerIndex + 1) % state.players.size
+        val n = state.players.size
+        var nextIndex = (state.currentPlayerIndex + 1) % n
+
+        if (state.isSurvivorMode) {
+            val aliveTeamIds = state.aliveTeams.map { it.id }.toSet()
+            var guard = 0
+            while (aliveTeamIds.isNotEmpty() && state.players[nextIndex].teamId !in aliveTeamIds && guard < n) {
+                nextIndex = (nextIndex + 1) % n
+                guard += 1
+            }
+            val playersActivated = state.players.mapIndexed { index, p -> p.copy(isActive = index == nextIndex) }
+            return Advance(players = playersActivated, nextIndex = nextIndex, nextRound = state.round, finished = false)
+        }
+
         val wrappedAround = nextIndex == 0
         val nextRound = if (wrappedAround) state.round + 1 else state.round
-        val playersActivated = playersDeactivated.mapIndexed { index, p ->
-            if (index == nextIndex) p.copy(isActive = true) else p
-        }
+        val playersActivated = state.players.mapIndexed { index, p -> p.copy(isActive = index == nextIndex) }
         val finished = nextRound > state.totalRounds
         return Advance(
             players = playersActivated,
@@ -158,10 +207,6 @@ object GameEngine {
         )
     }
 
-    /**
-     * دست‌به‌دست: نوبت فوراً به نفر بعد می‌رسد اما زمان باقی‌مانده دست‌نخورده باقی می‌ماند
-     * و صفحه‌ی «آماده‌ام» نمایش داده نمی‌شود؛ بازی همچنان IN_PROGRESS باقی می‌ماند.
-     */
     private fun passToNextPlayerSeamlessly(state: GameState): GameState {
         val advance = advanceToNextPlayer(state)
         if (advance.finished) {
@@ -181,15 +226,36 @@ object GameEngine {
             round = advance.nextRound,
             currentWord = word,
             usedWords = usedWords
-            // status و timeRemainingSeconds عمداً دست‌نخورده می‌مانند.
         )
     }
 
-    /**
-     * پایان کامل نوبت (پایان زمان یا پایان دستی): زمان باقی‌مانده به‌عنوان زمان ذخیره‌شده
-     * ثبت می‌شود، تایمر برای نفر بعد ریست خواهد شد و صفحه‌ی انتقال نوبت نمایش داده می‌شود.
-     */
+    private fun passToNextAliveSeamlessly(state: GameState, aliveTeamIds: Set<Int>): GameState {
+        val n = state.players.size
+        if (n == 0) return state
+        var idx = state.currentPlayerIndex
+        var guard = 0
+        while (guard < n) {
+            idx = (idx + 1) % n
+            if (state.players[idx].teamId in aliveTeamIds) {
+                val playersActivated = state.players.mapIndexed { i, p -> p.copy(isActive = i == idx) }
+                val (word, usedWords) = pickWord(state)
+                return state.copy(
+                    players = playersActivated,
+                    currentPlayerIndex = idx,
+                    currentWord = word,
+                    usedWords = usedWords
+                )
+            }
+            guard += 1
+        }
+        return state
+    }
+
     fun endTurn(state: GameState): GameState {
+        if (state.isSurvivorMode) {
+            return passToNextPlayerSeamlessly(state)
+        }
+
         val currentTeamId = state.currentPlayer?.teamId
         val leftover = state.timeRemainingSeconds
         val teamsAfterSave = if (currentTeamId != null && leftover > 0) {
@@ -211,8 +277,12 @@ object GameEngine {
     }
 
     fun computeResult(state: GameState): GameResult {
-        val maxScore = state.teams.maxOfOrNull { it.score } ?: 0
-        val winners = state.teams.filter { it.score == maxScore }
+        val winners = if (state.isSurvivorMode) {
+            state.aliveTeams.ifEmpty { state.teams }
+        } else {
+            val maxScore = state.teams.maxOfOrNull { it.score } ?: 0
+            state.teams.filter { it.score == maxScore }
+        }
         val bestPlayer = state.players.maxByOrNull { it.correctCount }
         val totalCorrect = state.players.sumOf { it.correctCount }
         val totalPass = state.players.sumOf { it.passCount }
@@ -225,7 +295,8 @@ object GameEngine {
             totalCorrect = totalCorrect,
             totalPass = totalPass,
             totalSavedTimeSeconds = totalSaved,
-            durationSeconds = duration
+            durationSeconds = duration,
+            wasSurvivorMode = state.isSurvivorMode
         )
     }
 }

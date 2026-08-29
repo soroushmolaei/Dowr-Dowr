@@ -125,8 +125,41 @@ class GameViewModel(
                 delay(1000)
                 val current = _gameState.value ?: break
                 if (current.status != GameStatus.IN_PROGRESS) break
+
+                val previousPlayerId = current.currentPlayer?.id
+                val previousAliveIds = current.teams.filter { it.activeTimeSeconds < duration }.map { it.id }.toSet()
+
                 val ticked = GameEngine.tickTimer(current)
                 _gameState.value = ticked
+
+                if (ticked.status == GameStatus.FINISHED) {
+                    beepJob?.cancel()
+                    resetPassCooldown()
+                    persist(ticked)
+                    onGameFinished(ticked)
+                    break
+                }
+
+                if (ticked.isSurvivorMode) {
+                    // سرویوایور: پایان زمانِ مشترک به‌تنهایی پایان نوبت نیست؛ فقط حذف واقعیِ یک تیم مهم است.
+                    val nowAliveIds = ticked.teams.filter { it.activeTimeSeconds < duration }.map { it.id }.toSet()
+                    val justEliminated = previousAliveIds - nowAliveIds
+                    when {
+                        justEliminated.isNotEmpty() -> {
+                            soundManager.play(SoundEffect.DEFEAT, _settings.value.soundEnabled)
+                            soundManager.vibrate(_settings.value.vibrationEnabled, durationMs = 200L)
+                            startPassCooldown()
+                            persist(ticked)
+                        }
+                        ticked.currentPlayer?.id != previousPlayerId -> {
+                            soundManager.play(SoundEffect.TURN_CHANGE, _settings.value.soundEnabled)
+                            startPassCooldown()
+                            persist(ticked)
+                        }
+                    }
+                    continue
+                }
+
                 if (ticked.timeRemainingSeconds <= 0) {
                     finishTurn()
                     break
@@ -139,6 +172,7 @@ class GameViewModel(
      * حلقه‌ی مستقلِ بوق برای ایجاد استرس: از ابتدا هر ثانیه یک تیک ملایم،
      * از ۱۵ ثانیه‌ی آخر با شتاب تصاعدی سریع‌تر می‌شود. بوق ممتد پایانی
      * توسط [finishTurn] (نه این حلقه) پخش می‌شود تا با پایان واقعی هم‌زمان باشد.
+     * در حالت سرویوایور، «زمان باقی‌مانده» یعنی موجودیِ باقی‌مانده‌ی تیمی که همین الان بازی می‌کند.
      */
     private fun startBeepLoop() {
         beepJob?.cancel()
@@ -148,7 +182,7 @@ class GameViewModel(
             while (true) {
                 val current = _gameState.value ?: break
                 if (current.status != GameStatus.IN_PROGRESS) break
-                val remaining = current.timeRemainingSeconds
+                val remaining = current.displayTimeRemaining
                 if (remaining <= 0) break
                 if (remaining <= URGENT_PHASE_SECONDS) {
                     soundManager.play(SoundEffect.TIMER_WARNING, _settings.value.soundEnabled)
@@ -237,7 +271,29 @@ class GameViewModel(
     }
 
     fun finishTurnManually() {
-        if (_gameState.value?.status == GameStatus.IN_PROGRESS) finishTurn()
+        val state = _gameState.value ?: return
+        if (state.status != GameStatus.IN_PROGRESS) return
+        if (state.isSurvivorMode) {
+            // سرویوایور: پایان دستی فقط یک پاسِ نرم است؛ ساعتِ کلیِ بازی متوقف نمی‌شود.
+            val previousPlayerId = state.currentPlayer?.id
+            val updated = GameEngine.endTurn(state)
+            _gameState.value = updated
+            if (updated.status == GameStatus.FINISHED) {
+                timerJob?.cancel()
+                beepJob?.cancel()
+                resetPassCooldown()
+                persist(updated)
+                onGameFinished(updated)
+            } else {
+                if (updated.currentPlayer?.id != previousPlayerId) {
+                    soundManager.play(SoundEffect.TURN_CHANGE, _settings.value.soundEnabled)
+                    startPassCooldown()
+                }
+                persist(updated)
+            }
+        } else {
+            finishTurn()
+        }
     }
 
     private fun finishTurn() {

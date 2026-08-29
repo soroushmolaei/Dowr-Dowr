@@ -27,6 +27,27 @@ data class GameState(
 
     fun teamOf(playerId: Int): Team? =
         players.firstOrNull { it.id == playerId }?.let { p -> teams.firstOrNull { it.id == p.teamId } }
+
+    /**
+     * حالت سرویوایور فقط در شیوه‌ی «دست‌به‌دست» و با تایمر محدود معنا دارد؛
+     * چون بدون سقف زمانی، تیمی هرگز زمانش تمام نمی‌شود.
+     */
+    val isSurvivorMode: Boolean
+        get() = settings.turnStyle == TurnStyle.ROTATING && settings.timerDurationSeconds > 0
+
+    fun isTeamEliminated(team: Team): Boolean =
+        isSurvivorMode && team.activeTimeSeconds >= settings.timerDurationSeconds
+
+    val aliveTeams: List<Team>
+        get() = if (isSurvivorMode) teams.filterNot { isTeamEliminated(it) } else teams
+
+    /** عددی که باید روی حلقه‌ی تایمر و شتاب بوق نمایش داده شود. */
+    val displayTimeRemaining: Int
+        get() = if (isSurvivorMode) {
+            (settings.timerDurationSeconds - (currentTeam?.activeTimeSeconds ?: 0)).coerceAtLeast(0)
+        } else {
+            timeRemainingSeconds
+        }
 }
 
 @Serializable

@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -101,14 +102,32 @@ fun GamePlayScreen(
             state.teams.forEach { t ->
                 val c = runCatching { Color(android.graphics.Color.parseColor(t.colorHex)) }
                     .getOrDefault(MaterialTheme.colorScheme.primary)
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                val eliminated = state.isTeamEliminated(t)
+                val displaySeconds = if (state.isSurvivorMode) {
+                    (state.settings.timerDurationSeconds - t.activeTimeSeconds).coerceAtLeast(0)
+                } else {
+                    t.activeTimeSeconds
+                }
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.alpha(if (eliminated) 0.35f else 1f)
+                ) {
                     Text(t.name, fontSize = 12.sp, color = c)
-                    Text(
-                        formatMmSs(t.activeTimeSeconds),
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Black,
-                        color = Color.White
-                    )
+                    if (eliminated) {
+                        Text(
+                            text = stringResource(R.string.team_eliminated),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = DorinoError
+                        )
+                    } else {
+                        Text(
+                            formatMmSs(displaySeconds),
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Black,
+                            color = Color.White
+                        )
+                    }
                 }
             }
         }
@@ -157,7 +176,7 @@ fun GamePlayScreen(
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             TimerRing(
                 totalSeconds = state.settings.timerDurationSeconds,
-                remainingSeconds = state.timeRemainingSeconds
+                remainingSeconds = state.displayTimeRemaining
             )
         }
 
@@ -234,7 +253,10 @@ fun GamePlayScreen(
             }
             Spacer(Modifier.height(10.dp))
             Text(
-                text = "پایان زودهنگام نوبت (ذخیره زمان)",
+                text = if (state.isSurvivorMode)
+                    stringResource(R.string.pass_turn_survivor)
+                else
+                    "پایان زودهنگام نوبت (ذخیره زمان)",
                 color = Color.White.copy(alpha = 0.45f),
                 fontSize = 12.sp,
                 textAlign = TextAlign.Center,

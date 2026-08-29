@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -70,6 +71,7 @@ fun GameResultScreen(
             items(result.teams) { team ->
                 val color = runCatching { Color(android.graphics.Color.parseColor(team.colorHex)) }
                     .getOrDefault(MaterialTheme.colorScheme.primary)
+                val eliminated = result.wasSurvivorMode && result.winnerTeams.none { it.id == team.id }
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -79,7 +81,17 @@ fun GameResultScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(team.name, color = color, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(team.name, color = color, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        if (eliminated) {
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                stringResource(R.string.team_eliminated),
+                                color = DorinoOnSurfaceMuted,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
                     Text(team.score.toString(), color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black)
                 }
             }

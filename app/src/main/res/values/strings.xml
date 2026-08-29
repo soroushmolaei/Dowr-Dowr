@@ -57,6 +57,8 @@
     <string name="time_left">زمان باقی‌مانده</string>
     <string name="score_label">امتیاز</string>
     <string name="round_label">دور %1$d</string>
+    <string name="team_eliminated">حذف شد ❌</string>
+    <string name="pass_turn_survivor">رد کردن نوبت به نفر بعد</string>
     <string name="time_saved_message">%1$d ثانیه ذخیره شد</string>
     <string name="get_ready">آماده باش…</string>
     <string name="go_label">شروع!</string>
@@ -93,7 +95,7 @@
     <string name="turn_style_rally">رالی</string>
     <string name="turn_style_rally_desc">هرکی جواب بده، نوبتش رو نگه می‌داره تا زمان تمام بشه.</string>
     <string name="turn_style_rotating">دست‌به‌دست</string>
-    <string name="turn_style_rotating_desc">بعد از هر پاسخ درست، گوشی فوراً دست نفر بعدی می‌ره.</string>
+    <string name="turn_style_rotating_desc">سرویوایور: هر تیم یک موجودیِ زمانِ کلی داره؛ وقتی تمام بشه، تیم حذف می‌شه — تا وقتی فقط یک تیم بمونه و برنده بشه.</string>
     <string name="settings_dark_mode">حالت تاریک</string>
     <string name="settings_privacy_mode">حریم خصوصی هنگام انتقال گوشی</string>
     <string name="settings_language">زبان</string>
