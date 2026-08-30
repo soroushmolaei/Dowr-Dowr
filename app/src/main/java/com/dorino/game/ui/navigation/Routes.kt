@@ -9,6 +9,7 @@ object Routes {
     const val SEATING = "seating"
     const val TURN_TRANSITION = "turn_transition"
     const val GAMEPLAY = "gameplay"
+    const val SURVIVOR_CHECKPOINT = "survivor_checkpoint"
     const val GAME_RESULT = "game_result"
     const val SETTINGS = "settings"
     const val TUTORIAL = "tutorial"

@@ -5,6 +5,8 @@ import com.dorino.game.data.model.GameSettings
 import com.dorino.game.data.model.GameState
 import com.dorino.game.data.model.GameStatus
 import com.dorino.game.data.model.Player
+import com.dorino.game.data.model.SurvivorCheckpoint
+import com.dorino.game.data.model.SurvivorCheckpointType
 import com.dorino.game.data.model.Team
 import com.dorino.game.data.model.TurnStyle
 import com.dorino.game.data.words.WordRepository
@@ -27,9 +29,10 @@ data class GameResult(
  *
  * حالت سرویوایور (فقط شیوه‌ی «دست‌به‌دست» + تایمر محدود):
  * هر تیم یک «موجودی زمان» کلی برابر با مدت تایمر انتخاب‌شده دارد که هرگز ریست نمی‌شود.
- * وقتی موجودی یک تیم صفر شود، آن تیم حذف می‌شود و نوبت بی‌وقفه به نفرِ زنده‌ی بعدی می‌رسد.
- * وقتی فقط یک تیم زنده بماند، همان تیم برنده‌ی بازی است؛ تعداد دور در این حالت فقط
- * یک شمارنده‌ی نمایشی است که بر اساس آستانه‌های زمانیِ متناسب با تعداد دور پیش می‌رود.
+ * وقتی موجودی یک تیم صفر شود، آن تیم حذف می‌شود، بازی استپ می‌شود و با دکمه‌ی «ادامه»
+ * نوبت به تیمِ زنده‌ی بعدی می‌رسد. همچنین در آستانه‌های زمانیِ متناسب با تعداد دور،
+ * بازی استپ می‌شود و با «ادامه» همان بازیکن با کلمه‌ی جدید ادامه می‌دهد. وقتی فقط یک تیم
+ * زنده بماند، همان تیم برنده‌ی بازی است.
  */
 object GameEngine {
 
@@ -89,8 +92,9 @@ object GameEngine {
 
     /**
      * تیک هر ثانیه‌ی تایمر. در حالت سرویوایور، این تابع علاوه بر شمارش معکوس مسئول
-     * تشخیص حذف تیم، انتقال بی‌وقفه‌ی نوبت به نفر زنده‌ی بعدی، پیشرفت شماره‌ی دور
-     * بر اساس آستانه‌های زمانی، و پایان بازی وقتی فقط یک تیم زنده بماند نیز هست.
+     * تشخیص حذف تیم و پیشرفت شماره‌ی دور بر اساس آستانه‌های زمانی است. هرکدام از این دو
+     * رویداد که رخ دهد، بازی استپ می‌شود (وضعیت ROUND_SUMMARY) تا با «ادامه» ازسر گرفته شود.
+     * وقتی فقط یک تیم زنده بماند، بازی بی‌درنگ با برد همان تیم تمام می‌شود.
      */
     fun tickTimer(state: GameState): GameState {
         if (state.settings.timerDurationSeconds == 0) return state
@@ -104,35 +108,67 @@ object GameEngine {
             }
         } else state.teams
 
-        var working = state.copy(timeRemainingSeconds = newTime, teams = updatedTeams)
+        val working = state.copy(timeRemainingSeconds = newTime, teams = updatedTeams)
 
         if (!working.isSurvivorMode) return working
 
         val aliveTeamIds = updatedTeams.filter { it.activeTimeSeconds < bank }.map { it.id }.toSet()
 
+        // فقط یک تیم زنده مانده: بازی همین‌جا با برد همان تیم تمام می‌شود.
         if (aliveTeamIds.size <= 1) {
             return working.copy(
                 status = GameStatus.FINISHED,
                 currentWord = null,
+                survivorCheckpoint = null,
                 finishedAtEpochMillis = System.currentTimeMillis()
             )
         }
 
+        // تیمِ در حال بازی همین الان حذف شد: بازی استپ می‌شود تا با «ادامه» به تیم بعدی برسد.
         if (activeTeamId != null && activeTeamId !in aliveTeamIds) {
-            working = passToNextAliveSeamlessly(working, aliveTeamIds)
+            val eliminatedTeamName = state.teams.firstOrNull { it.id == activeTeamId }?.name
+            return working.copy(
+                status = GameStatus.ROUND_SUMMARY,
+                currentWord = null,
+                survivorCheckpoint = SurvivorCheckpoint(SurvivorCheckpointType.TEAM_ELIMINATED, eliminatedTeamName)
+            )
         }
 
-        while (working.round < working.totalRounds) {
+        // آستانه‌ی زمانیِ پایانِ دور: بازی استپ می‌شود تا با «ادامه»، همان بازیکن با کلمه‌ی جدید ادامه دهد.
+        if (working.round < working.totalRounds) {
             val thresholdSeconds = bank * (working.totalRounds - working.round) / working.totalRounds
             val teamsAboveThreshold = working.teams.count { (bank - it.activeTimeSeconds) > thresholdSeconds }
             if (teamsAboveThreshold <= 1) {
-                working = working.copy(round = working.round + 1)
-            } else {
-                break
+                return working.copy(
+                    round = working.round + 1,
+                    status = GameStatus.ROUND_SUMMARY,
+                    currentWord = null,
+                    survivorCheckpoint = SurvivorCheckpoint(SurvivorCheckpointType.ROUND_ADVANCED)
+                )
             }
         }
 
         return working
+    }
+
+    /**
+     * ازسرگیریِ بازی پس از یک چک‌پوینتِ سرویوایور (چه حذف تیم، چه پایان دور).
+     * برای پایانِ دور: همان بازیکن با کلمه‌ی جدید ادامه می‌دهد.
+     * برای حذف تیم: نوبت به نفرِ زنده‌ی بعدی می‌رسد.
+     */
+    fun resumeFromCheckpoint(state: GameState): GameState {
+        val checkpoint = state.survivorCheckpoint ?: return state
+        val cleared = state.copy(survivorCheckpoint = null, status = GameStatus.IN_PROGRESS)
+        return when (checkpoint.type) {
+            SurvivorCheckpointType.ROUND_ADVANCED -> {
+                val (word, usedWords) = pickWord(cleared)
+                cleared.copy(currentWord = word, usedWords = usedWords)
+            }
+            SurvivorCheckpointType.TEAM_ELIMINATED -> {
+                val aliveTeamIds = cleared.aliveTeams.map { it.id }.toSet()
+                passToNextAliveSeamlessly(cleared, aliveTeamIds)
+            }
+        }
     }
 
     fun markCorrect(state: GameState): GameState {

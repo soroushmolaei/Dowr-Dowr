@@ -32,3 +32,20 @@ enum class TurnStyle {
     /** دست‌به‌دست: بعد از هر پاسخ صحیح، نوبت فوراً به نفر بعدی می‌رسد. */
     ROTATING
 }
+
+/** دلیل توقفِ بازی در حالت سرویوایور. */
+@Serializable
+enum class SurvivorCheckpointType {
+    /** موجودیِ زمانِ یک تیم تمام شد و آن تیم حذف شد. */
+    TEAM_ELIMINATED,
+
+    /** به آستانه‌ی زمانیِ پایانِ یک دور رسیدیم. */
+    ROUND_ADVANCED
+}
+
+/** اطلاعات لازم برای نمایش صفحه‌ی توقفِ سرویوایور. */
+@Serializable
+data class SurvivorCheckpoint(
+    val type: SurvivorCheckpointType,
+    val eliminatedTeamName: String? = null
+)

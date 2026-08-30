@@ -15,6 +15,7 @@ data class GameState(
     val round: Int = 1,
     val totalRounds: Int = 3,
     val status: GameStatus = GameStatus.NOT_STARTED,
+    val survivorCheckpoint: SurvivorCheckpoint? = null,
     val startedAtEpochMillis: Long = 0L,
     val finishedAtEpochMillis: Long? = null,
     val settings: GameSettings = GameSettings()

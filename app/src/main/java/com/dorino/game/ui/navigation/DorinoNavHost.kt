@@ -20,6 +20,7 @@ import com.dorino.game.ui.playernames.PlayerNamesScreen
 import com.dorino.game.ui.roundresult.GameResultScreen
 import com.dorino.game.ui.seating.SeatingScreen
 import com.dorino.game.ui.settings.SettingsScreen
+import com.dorino.game.ui.survivor.SurvivorCheckpointScreen
 import com.dorino.game.ui.turntransition.TurnTransitionScreen
 import com.dorino.game.ui.tutorial.TutorialScreen
 
@@ -149,12 +150,32 @@ fun DorinoNavHost(viewModel: GameViewModel) {
                         GameStatus.TURN_TRANSITION -> navController.navigate(Routes.TURN_TRANSITION) {
                             popUpTo(Routes.GAMEPLAY) { inclusive = true }
                         }
+                        GameStatus.ROUND_SUMMARY -> navController.navigate(Routes.SURVIVOR_CHECKPOINT) {
+                            popUpTo(Routes.GAMEPLAY) { inclusive = true }
+                        }
                         GameStatus.FINISHED -> navController.navigate(Routes.GAME_RESULT) {
                             popUpTo(Routes.GAMEPLAY) { inclusive = true }
                         }
                         else -> {}
                     }
                 }
+            }
+        }
+
+        composable(Routes.SURVIVOR_CHECKPOINT) {
+            val state = gameState
+            if (state == null || state.survivorCheckpoint == null) {
+                LaunchedEffect(Unit) { navController.navigate(Routes.HOME) { popUpTo(Routes.HOME) { inclusive = true } } }
+            } else {
+                SurvivorCheckpointScreen(
+                    state = state,
+                    onContinue = {
+                        viewModel.confirmSurvivorContinue()
+                        navController.navigate(Routes.GAMEPLAY) {
+                            popUpTo(Routes.SURVIVOR_CHECKPOINT) { inclusive = true }
+                        }
+                    }
+                )
             }
         }
 

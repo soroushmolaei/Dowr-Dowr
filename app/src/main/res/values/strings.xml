@@ -59,6 +59,11 @@
     <string name="round_label">دور %1$d</string>
     <string name="team_eliminated">حذف شد ❌</string>
     <string name="pass_turn_survivor">رد کردن نوبت به نفر بعد</string>
+    <string name="checkpoint_team_eliminated">%1$s حذف شد!</string>
+    <string name="checkpoint_next_team_hint">نوبت به تیم بعدی می‌رسه</string>
+    <string name="checkpoint_round_advanced">دور %1$d شروع می‌شه</string>
+    <string name="checkpoint_same_player_hint">%1$s با یه کلمه‌ی جدید ادامه می‌ده</string>
+    <string name="checkpoint_continue">ادامه</string>
     <string name="time_saved_message">%1$d ثانیه ذخیره شد</string>
     <string name="get_ready">آماده باش…</string>
     <string name="go_label">شروع!</string>

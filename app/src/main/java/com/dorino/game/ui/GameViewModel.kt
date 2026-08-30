@@ -11,6 +11,7 @@ import com.dorino.game.data.model.GameMode
 import com.dorino.game.data.model.GameSettings
 import com.dorino.game.data.model.GameState
 import com.dorino.game.data.model.GameStatus
+import com.dorino.game.data.model.SurvivorCheckpointType
 import com.dorino.game.data.persistence.GameStateStore
 import com.dorino.game.domain.GameEngine
 import com.dorino.game.domain.GameResult
@@ -57,6 +58,10 @@ class GameViewModel(
     private var beepJob: Job? = null
     private var passCooldownJob: Job? = null
 
+    /** حداقلِ فاصله‌ی بوق که تا الان در این بازیِ سرویوایور رسیده شده؛ فقط می‌تواند کوچک‌تر شود
+     * (یعنی سرعت فقط زیاد می‌شود) تا استرس بازی هیچ‌وقت کم نشود. با هر بازی جدید ریست می‌شود. */
+    private var survivorBeepFloorMs: Long = 1000L
+
     init {
         viewModelScope.launch {
             store.settingsFlow.collect { _settings.value = it }
@@ -100,6 +105,7 @@ class GameViewModel(
         val state = GameEngine.createGame(mode, names, _settings.value)
         _gameState.value = state
         _setupDraft.value = GameSetupDraft()
+        survivorBeepFloorMs = 1000L
         persist(state)
         soundManager.play(SoundEffect.START, _settings.value.soundEnabled)
     }
@@ -126,9 +132,6 @@ class GameViewModel(
                 val current = _gameState.value ?: break
                 if (current.status != GameStatus.IN_PROGRESS) break
 
-                val previousPlayerId = current.currentPlayer?.id
-                val previousAliveIds = current.teams.filter { it.activeTimeSeconds < duration }.map { it.id }.toSet()
-
                 val ticked = GameEngine.tickTimer(current)
                 _gameState.value = ticked
 
@@ -140,27 +143,22 @@ class GameViewModel(
                     break
                 }
 
-                if (ticked.isSurvivorMode) {
-                    // سرویوایور: پایان زمانِ مشترک به‌تنهایی پایان نوبت نیست؛ فقط حذف واقعیِ یک تیم مهم است.
-                    val nowAliveIds = ticked.teams.filter { it.activeTimeSeconds < duration }.map { it.id }.toSet()
-                    val justEliminated = previousAliveIds - nowAliveIds
-                    when {
-                        justEliminated.isNotEmpty() -> {
-                            soundManager.play(SoundEffect.DEFEAT, _settings.value.soundEnabled)
-                            soundManager.vibrate(_settings.value.vibrationEnabled, durationMs = 200L)
-                            startPassCooldown()
-                            persist(ticked)
-                        }
-                        ticked.currentPlayer?.id != previousPlayerId -> {
-                            soundManager.play(SoundEffect.TURN_CHANGE, _settings.value.soundEnabled)
-                            startPassCooldown()
-                            persist(ticked)
-                        }
-                    }
-                    continue
+                if (ticked.status == GameStatus.ROUND_SUMMARY) {
+                    // چک‌پوینتِ سرویوایور (حذف تیم یا پایان دور): بازی اینجا استپ می‌شود
+                    // و فقط با فشردن «ادامه» (confirmSurvivorContinue) دوباره شروع خواهد شد.
+                    beepJob?.cancel()
+                    resetPassCooldown()
+                    val eliminated = ticked.survivorCheckpoint?.type == SurvivorCheckpointType.TEAM_ELIMINATED
+                    soundManager.play(
+                        if (eliminated) SoundEffect.DEFEAT else SoundEffect.TURN_CHANGE,
+                        _settings.value.soundEnabled
+                    )
+                    if (eliminated) soundManager.vibrate(_settings.value.vibrationEnabled, durationMs = 200L)
+                    persist(ticked)
+                    break
                 }
 
-                if (ticked.timeRemainingSeconds <= 0) {
+                if (!ticked.isSurvivorMode && ticked.timeRemainingSeconds <= 0) {
                     finishTurn()
                     break
                 }
@@ -168,11 +166,25 @@ class GameViewModel(
         }
     }
 
+    /** ادامه‌ی بازی پس از یک چک‌پوینتِ سرویوایور (حذف تیم یا پایان دور). */
+    fun confirmSurvivorContinue() {
+        val state = _gameState.value ?: return
+        if (state.status != GameStatus.ROUND_SUMMARY) return
+        val updated = GameEngine.resumeFromCheckpoint(state)
+        _gameState.value = updated
+        persist(updated)
+        startPassCooldown()
+        startTimerLoop()
+        startBeepLoop()
+        soundManager.play(SoundEffect.START, _settings.value.soundEnabled)
+    }
+
     /**
      * حلقه‌ی مستقلِ بوق برای ایجاد استرس: از ابتدا هر ثانیه یک تیک ملایم،
      * از ۱۵ ثانیه‌ی آخر با شتاب تصاعدی سریع‌تر می‌شود. بوق ممتد پایانی
      * توسط [finishTurn] (نه این حلقه) پخش می‌شود تا با پایان واقعی هم‌زمان باشد.
-     * در حالت سرویوایور، «زمان باقی‌مانده» یعنی موجودیِ باقی‌مانده‌ی تیمی که همین الان بازی می‌کند.
+     * در حالت سرویوایور، «زمان باقی‌مانده» یعنی موجودیِ باقی‌مانده‌ی تیمی که همین الان بازی می‌کند؛
+     * و ریتم هیچ‌وقت کندتر نمی‌شود، حتی وقتی نوبت به تیمی با موجودیِ بیشتر می‌رسد.
      */
     private fun startBeepLoop() {
         beepJob?.cancel()
@@ -190,7 +202,13 @@ class GameViewModel(
                 } else {
                     soundManager.play(SoundEffect.TICK_SOFT, _settings.value.soundEnabled)
                 }
-                delay(beepIntervalMs(remaining))
+                var interval = beepIntervalMs(remaining)
+                if (current.isSurvivorMode) {
+                    // فقط اجازه‌ی سریع‌تر شدن؛ هیچ‌وقت کندتر از رکوردِ قبلی نمی‌شود.
+                    interval = minOf(interval, survivorBeepFloorMs)
+                    survivorBeepFloorMs = interval
+                }
+                delay(interval)
             }
         }
     }
@@ -351,13 +369,27 @@ class GameViewModel(
     /** آماده‌سازی یک بازی نیمه‌تمام برای ادامه (مثلاً پس از بستن برنامه در وسط بازی). */
     fun prepareResume() {
         val state = _gameState.value ?: return
-        if (state.status == GameStatus.IN_PROGRESS) {
-            timerJob?.cancel()
-            beepJob?.cancel()
-            passCooldownJob?.cancel()
-            val resumed = state.copy(status = GameStatus.TURN_TRANSITION, currentWord = null)
-            _gameState.value = resumed
-            persist(resumed)
+        when (state.status) {
+            GameStatus.IN_PROGRESS -> {
+                timerJob?.cancel()
+                beepJob?.cancel()
+                passCooldownJob?.cancel()
+                val resumed = state.copy(status = GameStatus.TURN_TRANSITION, currentWord = null)
+                _gameState.value = resumed
+                persist(resumed)
+            }
+            GameStatus.ROUND_SUMMARY -> {
+                // یک چک‌پوینتِ سرویوایور نیمه‌کاره بود (حذف تیم یا پایان دور)؛
+                // ابتدا طبق قانونش حل می‌شود، بعد مثل یک انتقال نوبتِ عادی نشان داده می‌شود.
+                timerJob?.cancel()
+                beepJob?.cancel()
+                passCooldownJob?.cancel()
+                val resolved = GameEngine.resumeFromCheckpoint(state)
+                    .copy(status = GameStatus.TURN_TRANSITION, currentWord = null)
+                _gameState.value = resolved
+                persist(resolved)
+            }
+            else -> {}
         }
     }
 
@@ -368,6 +400,7 @@ class GameViewModel(
         val newState = GameEngine.createGame(finished.mode, names, _settings.value)
         _lastResult.value = null
         _gameState.value = newState
+        survivorBeepFloorMs = 1000L
         persist(newState)
         soundManager.play(SoundEffect.START, _settings.value.soundEnabled)
     }
