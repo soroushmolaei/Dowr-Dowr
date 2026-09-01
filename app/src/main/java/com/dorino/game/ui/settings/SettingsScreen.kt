@@ -211,6 +211,7 @@ fun SettingsScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun CustomWordsEditor(
     words: List<String>,
