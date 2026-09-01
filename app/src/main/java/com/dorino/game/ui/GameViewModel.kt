@@ -12,6 +12,7 @@ import com.dorino.game.data.model.GameSettings
 import com.dorino.game.data.model.GameState
 import com.dorino.game.data.model.GameStatus
 import com.dorino.game.data.model.SurvivorCheckpointType
+import com.dorino.game.data.model.TurnStyle
 import com.dorino.game.data.persistence.GameStateStore
 import com.dorino.game.domain.GameEngine
 import com.dorino.game.domain.GameResult
@@ -77,9 +78,31 @@ class GameViewModel(
     // ---------- تنظیمات ----------
 
     fun updateSettings(update: (GameSettings) -> GameSettings) {
-        val newSettings = update(_settings.value)
-        _settings.value = newSettings
-        viewModelScope.launch { store.saveSettings(newSettings) }
+        val candidate = update(_settings.value)
+        // سرعتی به تایمر محدود و حداقل ۳ دور نیاز دارد؛ هر تغییری این محدودیت را رعایت می‌کند.
+        val sanitized = if (candidate.turnStyle == TurnStyle.ROTATING) {
+            candidate.copy(
+                roundCount = candidate.roundCount.coerceAtLeast(3),
+                timerDurationSeconds = if (candidate.timerDurationSeconds == 0) 60 else candidate.timerDurationSeconds
+            )
+        } else {
+            candidate
+        }
+        _settings.value = sanitized
+        viewModelScope.launch { store.saveSettings(sanitized) }
+    }
+
+    fun addCustomWord(text: String) {
+        val trimmed = text.trim()
+        if (trimmed.isEmpty()) return
+        updateSettings {
+            if (it.customWords.any { existing -> existing.equals(trimmed, ignoreCase = true) }) it
+            else it.copy(customWords = it.customWords + trimmed)
+        }
+    }
+
+    fun removeCustomWord(text: String) {
+        updateSettings { it.copy(customWords = it.customWords - text) }
     }
 
     // ---------- ساخت بازی ----------

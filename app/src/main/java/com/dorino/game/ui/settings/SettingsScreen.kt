@@ -11,14 +11,22 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,19 +40,25 @@ import com.dorino.game.data.model.Difficulty
 import com.dorino.game.data.model.GameSettings
 import com.dorino.game.data.model.TurnStyle
 import com.dorino.game.data.model.WordCategory
+import com.dorino.game.ui.components.CategoryGrid
 import com.dorino.game.ui.components.OptionChip
 import com.dorino.game.ui.components.SelectableOptionRow
+import com.dorino.game.ui.theme.DorinoError
 import com.dorino.game.ui.theme.DorinoOnSurfaceMuted
 import com.dorino.game.ui.theme.DorinoPrimary
 import com.dorino.game.ui.theme.DorinoSurfaceElevated
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     settings: GameSettings,
     onUpdate: ((GameSettings) -> GameSettings) -> Unit,
+    onAddCustomWord: (String) -> Unit = {},
+    onRemoveCustomWord: (String) -> Unit = {},
     onBack: () -> Unit = {}
 ) {
+    val isSpeedMode = settings.turnStyle == TurnStyle.ROTATING
+
     LazyColumn(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 32.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)
@@ -92,20 +106,6 @@ fun SettingsScreen(
         }
 
         item {
-            Text(stringResource(R.string.settings_timer_duration), color = DorinoOnSurfaceMuted, fontSize = 14.sp)
-            Spacer(Modifier.height(8.dp))
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                GameSettings.TIMER_OPTIONS.forEach { seconds ->
-                    val label = if (seconds == 0) stringResource(R.string.duration_unlimited) else "${seconds}s"
-                    OptionChip(
-                        text = label,
-                        selected = settings.timerDurationSeconds == seconds
-                    ) { onUpdate { it.copy(timerDurationSeconds = seconds) } }
-                }
-            }
-        }
-
-        item {
             Text(stringResource(R.string.settings_turn_style), color = DorinoOnSurfaceMuted, fontSize = 14.sp)
             Spacer(Modifier.height(8.dp))
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -123,6 +123,37 @@ fun SettingsScreen(
         }
 
         item {
+            Text(
+                text = if (isSpeedMode) stringResource(R.string.settings_team_time_label) else stringResource(R.string.settings_timer_duration),
+                color = DorinoOnSurfaceMuted,
+                fontSize = 14.sp
+            )
+            Spacer(Modifier.height(8.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                GameSettings.timerOptionsFor(settings.turnStyle).forEach { seconds ->
+                    val label = if (seconds == 0) stringResource(R.string.duration_unlimited) else "${seconds}s"
+                    OptionChip(
+                        text = label,
+                        selected = settings.timerDurationSeconds == seconds
+                    ) { onUpdate { it.copy(timerDurationSeconds = seconds) } }
+                }
+            }
+        }
+
+        item {
+            Text(stringResource(R.string.settings_round_count), color = DorinoOnSurfaceMuted, fontSize = 14.sp)
+            Spacer(Modifier.height(8.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                GameSettings.roundOptionsFor(settings.turnStyle).forEach { count ->
+                    OptionChip(
+                        text = count.toString(),
+                        selected = settings.roundCount == count
+                    ) { onUpdate { it.copy(roundCount = count) } }
+                }
+            }
+        }
+
+        item {
             Text(stringResource(R.string.settings_pass_cooldown), color = DorinoOnSurfaceMuted, fontSize = 14.sp)
             Spacer(Modifier.height(8.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -132,19 +163,6 @@ fun SettingsScreen(
                         text = label,
                         selected = settings.passCooldownSeconds == seconds
                     ) { onUpdate { it.copy(passCooldownSeconds = seconds) } }
-                }
-            }
-        }
-
-        item {
-            Text(stringResource(R.string.settings_round_count), color = DorinoOnSurfaceMuted, fontSize = 14.sp)
-            Spacer(Modifier.height(8.dp))
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                GameSettings.ROUND_OPTIONS.forEach { count ->
-                    OptionChip(
-                        text = count.toString(),
-                        selected = settings.roundCount == count
-                    ) { onUpdate { it.copy(roundCount = count) } }
                 }
             }
         }
@@ -167,18 +185,91 @@ fun SettingsScreen(
         item {
             Text(stringResource(R.string.settings_word_categories), color = DorinoOnSurfaceMuted, fontSize = 14.sp)
             Spacer(Modifier.height(8.dp))
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                WordCategory.entries.forEach { category ->
-                    val selected = category in settings.selectedCategories
-                    OptionChip(
-                        text = stringResource(category.labelRes),
-                        selected = selected
-                    ) {
-                        onUpdate {
-                            val newSet = if (selected) it.selectedCategories - category else it.selectedCategories + category
-                            it.copy(selectedCategories = if (newSet.isEmpty()) it.selectedCategories else newSet)
-                        }
+            CategoryGrid(
+                categories = WordCategory.entries.toList(),
+                selected = settings.selectedCategories,
+                onToggle = { category ->
+                    onUpdate {
+                        val newSet = if (category in it.selectedCategories) it.selectedCategories - category else it.selectedCategories + category
+                        it.copy(selectedCategories = if (newSet.isEmpty()) it.selectedCategories else newSet)
                     }
+                }
+            )
+        }
+
+        item {
+            Text(stringResource(R.string.settings_custom_words), color = DorinoOnSurfaceMuted, fontSize = 14.sp)
+            Spacer(Modifier.height(4.dp))
+            Text(stringResource(R.string.settings_custom_words_hint), color = DorinoOnSurfaceMuted, fontSize = 11.sp)
+            Spacer(Modifier.height(8.dp))
+            CustomWordsEditor(
+                words = settings.customWords,
+                onAdd = onAddCustomWord,
+                onRemove = onRemoveCustomWord
+            )
+        }
+    }
+}
+
+@Composable
+private fun CustomWordsEditor(
+    words: List<String>,
+    onAdd: (String) -> Unit,
+    onRemove: (String) -> Unit
+) {
+    var newWord by remember { mutableStateOf("") }
+
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(
+            value = newWord,
+            onValueChange = { newWord = it },
+            placeholder = { Text(stringResource(R.string.custom_word_hint), fontSize = 13.sp) },
+            singleLine = true,
+            modifier = Modifier.weight(1f),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White.copy(alpha = 0.85f)
+            )
+        )
+        Row(
+            modifier = Modifier
+                .height(56.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(if (newWord.isNotBlank()) DorinoPrimary else DorinoPrimary.copy(alpha = 0.35f))
+                .clickable(enabled = newWord.isNotBlank()) {
+                    onAdd(newWord)
+                    newWord = ""
+                }
+                .padding(horizontal = 18.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(stringResource(R.string.custom_word_add), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+        }
+    }
+
+    Spacer(Modifier.height(10.dp))
+
+    if (words.isEmpty()) {
+        Text(stringResource(R.string.custom_words_empty), color = DorinoOnSurfaceMuted, fontSize = 12.sp)
+    } else {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            words.forEach { word ->
+                Row(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(DorinoSurfaceElevated)
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(word, color = Color.White, fontSize = 12.sp)
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = "✕",
+                        color = DorinoError,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.clickable { onRemove(word) }
+                    )
                 }
             }
         }

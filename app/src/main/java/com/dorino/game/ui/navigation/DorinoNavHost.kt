@@ -22,6 +22,7 @@ import com.dorino.game.ui.seating.SeatingScreen
 import com.dorino.game.ui.settings.SettingsScreen
 import com.dorino.game.ui.survivor.SurvivorCheckpointScreen
 import com.dorino.game.ui.turntransition.TurnTransitionScreen
+import com.dorino.game.ui.turnstyleselect.TurnStyleSelectScreen
 import com.dorino.game.ui.tutorial.TutorialScreen
 
 @Composable
@@ -40,7 +41,7 @@ fun DorinoNavHost(viewModel: GameViewModel) {
         composable(Routes.HOME) {
             HomeScreen(
                 hasSavedGame = gameState != null && gameState?.status != GameStatus.FINISHED,
-                onStartGame = { navController.navigate(Routes.MODE_SELECT) },
+                onStartGame = { navController.navigate(Routes.TURN_STYLE_SELECT) },
                 onContinueGame = {
                     viewModel.prepareResume()
                     navController.navigate(Routes.TURN_TRANSITION)
@@ -48,6 +49,16 @@ fun DorinoNavHost(viewModel: GameViewModel) {
                 onTutorial = { navController.navigate(Routes.TUTORIAL) },
                 onHistory = { navController.navigate(Routes.HISTORY) },
                 onSettings = { navController.navigate(Routes.SETTINGS) }
+            )
+        }
+
+        composable(Routes.TURN_STYLE_SELECT) {
+            TurnStyleSelectScreen(
+                onStyleSelected = { style ->
+                    viewModel.updateSettings { it.copy(turnStyle = style) }
+                    navController.navigate(Routes.MODE_SELECT)
+                },
+                onBack = { navController.popBackStack() }
             )
         }
 
@@ -206,6 +217,8 @@ fun DorinoNavHost(viewModel: GameViewModel) {
             SettingsScreen(
                 settings = settings,
                 onUpdate = viewModel::updateSettings,
+                onAddCustomWord = viewModel::addCustomWord,
+                onRemoveCustomWord = viewModel::removeCustomWord,
                 onBack = { navController.popBackStack() }
             )
         }

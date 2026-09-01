@@ -113,17 +113,29 @@ object WordRepository {
         words.map { (text, difficulty) -> Word(text, category, difficulty) }
     }
 
-    fun wordsForFilters(categories: Set<WordCategory>, difficulty: Difficulty): List<Word> {
+    fun wordsForFilters(
+        categories: Set<WordCategory>,
+        difficulty: Difficulty,
+        customWords: List<String> = emptyList()
+    ): List<Word> {
         val effectiveCategories = categories.ifEmpty { WordCategory.entries.toSet() }
         val effectiveDifficulties = if (difficulty == Difficulty.RANDOM) {
             setOf(Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD, Difficulty.CATASTROPHE)
         } else {
             setOf(difficulty)
         }
-        return rawWords.filterKeys { it in effectiveCategories }
+        val fromBank = rawWords.filterKeys { it in effectiveCategories }
             .flatMap { (category, words) ->
                 words.filter { (_, d) -> d in effectiveDifficulties }
                     .map { (text, d) -> Word(text, category, d) }
             }
+        // کلمات شخصی به‌خاطر نداشتنِ سختیِ ذاتی، مستقل از فیلتر سختی همیشه لحاظ می‌شوند.
+        val fromCustom = if (WordCategory.CUSTOM in effectiveCategories) {
+            customWords.map { it.trim() }.filter { it.isNotEmpty() }
+                .map { Word(it, WordCategory.CUSTOM, Difficulty.MEDIUM) }
+        } else {
+            emptyList()
+        }
+        return fromBank + fromCustom
     }
 }

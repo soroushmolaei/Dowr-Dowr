@@ -3,6 +3,7 @@ package com.dorino.game.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,9 +21,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dorino.game.data.model.WordCategory
 import com.dorino.game.ui.theme.DorinoOnSurfaceMuted
 import com.dorino.game.ui.theme.DorinoPrimary
 import com.dorino.game.ui.theme.DorinoSurfaceElevated
@@ -82,5 +86,67 @@ fun SelectableOptionRow(
                     shape = CircleShape
                 )
         )
+    }
+}
+
+/** کارت انتخابیِ یک دسته‌بندی، با آیکون؛ برای چیدمان دو ستونی دسته‌بندی‌ها. */
+@Composable
+fun CategoryCard(
+    category: WordCategory,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(if (selected) DorinoPrimary.copy(alpha = 0.22f) else DorinoSurfaceElevated)
+            .border(
+                width = 1.dp,
+                color = if (selected) DorinoPrimary else Color.White.copy(alpha = 0.08f),
+                shape = RoundedCornerShape(14.dp)
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(category.iconEmoji, fontSize = 18.sp)
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = stringResource(category.labelRes),
+            fontSize = 13.sp,
+            color = Color.White,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+/** چیدمانِ دسته‌بندی‌ها در سطرهای دو ستونی، هرکدام با آیکون. */
+@Composable
+fun CategoryGrid(
+    categories: List<WordCategory>,
+    selected: Set<WordCategory>,
+    onToggle: (WordCategory) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        categories.chunked(2).forEach { pair ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                pair.forEach { category ->
+                    CategoryCard(
+                        category = category,
+                        selected = category in selected,
+                        onClick = { onToggle(category) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                if (pair.size == 1) {
+                    Spacer(Modifier.weight(1f))
+                }
+            }
+        }
     }
 }

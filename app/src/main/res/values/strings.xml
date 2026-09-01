@@ -87,6 +87,11 @@
     <string name="settings_vibration">لرزش</string>
     <string name="settings_timer_duration">مدت تایمر</string>
     <string name="settings_word_categories">دسته‌بندی کلمات</string>
+    <string name="settings_custom_words">کلمات دسته‌ی شخصی من</string>
+    <string name="settings_custom_words_hint">کلماتی که اینجا اضافه کنی، وقتی «دسته شخصی من» رو انتخاب کنی توی بازی میان.</string>
+    <string name="custom_word_hint">یه کلمه بنویس…</string>
+    <string name="custom_word_add">افزودن</string>
+    <string name="custom_words_empty">هنوز کلمه‌ای اضافه نکردی.</string>
     <string name="settings_difficulty">درجه سختی</string>
     <string name="difficulty_easy">آسان</string>
     <string name="difficulty_medium">متوسط</string>
@@ -94,13 +99,15 @@
     <string name="difficulty_catastrophe">فاجعه</string>
     <string name="difficulty_random">رندوم</string>
     <string name="settings_round_count">تعداد دورها</string>
+    <string name="turn_style_select_title">شیوه‌ی بازی رو انتخاب کن</string>
     <string name="settings_turn_style">شیوه‌ی نوبت‌گیری</string>
     <string name="settings_pass_cooldown">فاصله‌ی بین رد شدن از کلمات</string>
     <string name="pass_cooldown_disabled">بدون فاصله</string>
-    <string name="turn_style_rally">رالی</string>
+    <string name="turn_style_rally">استقامتی</string>
     <string name="turn_style_rally_desc">هرکی جواب بده، نوبتش رو نگه می‌داره تا زمان تمام بشه.</string>
-    <string name="turn_style_rotating">دست‌به‌دست</string>
+    <string name="turn_style_rotating">سرعتی</string>
     <string name="turn_style_rotating_desc">سرویوایور: هر تیم یک موجودیِ زمانِ کلی داره؛ وقتی تمام بشه، تیم حذف می‌شه — تا وقتی فقط یک تیم بمونه و برنده بشه.</string>
+    <string name="settings_team_time_label">زمان هر تیم</string>
     <string name="settings_dark_mode">حالت تاریک</string>
     <string name="settings_privacy_mode">حریم خصوصی هنگام انتقال گوشی</string>
     <string name="settings_language">زبان</string>
@@ -131,6 +138,7 @@
     <string name="category_hard">سخت</string>
     <string name="category_easy">آسان</string>
     <string name="category_funny">خنده‌دار</string>
+    <string name="category_custom">دسته شخصی من</string>
 
     <!-- آموزش -->
     <string name="tutorial_title">آموزش بازی</string>
