@@ -175,7 +175,10 @@ fun DorinoNavHost(viewModel: GameViewModel) {
 
         composable(Routes.SURVIVOR_CHECKPOINT) {
             val state = gameState
-            if (state == null || state.survivorCheckpoint == null) {
+            if (state == null) {
+                // توجه: عمداً وابسته به state.survivorCheckpoint نیست — چون confirmSurvivorContinue
+                // دقیقاً همین فیلد را پاک می‌کند؛ اگر این صفحه با state جدید یک‌بار دیگر رندر شود
+                // (پیش از تکمیل ناوبری)، چک کردن آن باعث می‌شد به‌اشتباه به خانه برگردد.
                 LaunchedEffect(Unit) { navController.navigate(Routes.HOME) { popUpTo(Routes.HOME) { inclusive = true } } }
             } else {
                 SurvivorCheckpointScreen(

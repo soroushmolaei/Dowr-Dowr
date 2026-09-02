@@ -421,7 +421,9 @@ class GameViewModel(
         val finished = _gameState.value ?: return
         val names = finished.players.sortedBy { it.position }.map { it.name }
         val newState = GameEngine.createGame(finished.mode, names, _settings.value)
-        _lastResult.value = null
+        // عمداً lastResult را اینجا null نمی‌کنیم: چون صفحه‌ی نتیجه هنوز موقتاً روی صفحه است،
+        // خالی کردنش دقیقاً همین‌جا باعث می‌شد قبل از تکمیل ناوبری، آن صفحه با state خالی
+        // رندر دوباره شود و به‌اشتباه به صفحه‌ی اصلی هدایت کند. با پایان بازیِ بعدی خودش تازه می‌شود.
         _gameState.value = newState
         survivorBeepFloorMs = 1000L
         persist(newState)
