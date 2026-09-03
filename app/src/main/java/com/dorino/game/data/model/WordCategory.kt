@@ -20,6 +20,8 @@ enum class WordCategory(val labelRes: Int, val iconEmoji: String) {
     HARD(R.string.category_hard, "🧠"),
     EASY(R.string.category_easy, "🌱"),
     FUNNY(R.string.category_funny, "😂"),
+    PROVERBS(R.string.category_proverbs, "💬"),
+    DECADE_60(R.string.category_decade_60, "📼"),
 
     /** دسته‌ی شخصی: کلماتی که خودِ کاربر از تنظیمات اضافه کرده. */
     CUSTOM(R.string.category_custom, "✍️")

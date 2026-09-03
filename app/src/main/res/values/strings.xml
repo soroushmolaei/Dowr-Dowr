@@ -138,6 +138,8 @@
     <string name="category_hard">سخت</string>
     <string name="category_easy">آسان</string>
     <string name="category_funny">خنده‌دار</string>
+    <string name="category_proverbs">ضرب‌المثل</string>
+    <string name="category_decade_60">دهه شصت</string>
     <string name="category_custom">دسته شخصی من</string>
 
     <!-- آموزش -->

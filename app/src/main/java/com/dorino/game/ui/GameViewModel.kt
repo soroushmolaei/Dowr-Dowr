@@ -217,7 +217,7 @@ class GameViewModel(
             while (true) {
                 val current = _gameState.value ?: break
                 if (current.status != GameStatus.IN_PROGRESS) break
-                val remaining = current.displayTimeRemaining
+                val remaining = beepUrgencyRemaining(current)
                 if (remaining <= 0) break
                 if (remaining <= URGENT_PHASE_SECONDS) {
                     soundManager.play(SoundEffect.TIMER_WARNING, _settings.value.soundEnabled)
@@ -234,6 +234,18 @@ class GameViewModel(
                 delay(interval)
             }
         }
+    }
+
+    /**
+     * ملاکِ استرسِ بوق. در سرویوایور، به‌جای فقط زمانِ باقی‌مانده‌ی تیمِ در حال بازی، بر اساس
+     * نزدیک‌ترین تیمِ زنده به حذف‌شدن حساب می‌شود — یعنی برای کل دور مشترک است، نه هر تیم.
+     * این‌طوری وقتی نوبت دست‌به‌دست بین تیم‌ها می‌چرخد (حتی به تیمی با موجودیِ بیشتر)،
+     * نه ریتم و نه نوع صدا هیچ‌وقت آروم‌تر به‌نظر نمی‌رسد.
+     */
+    private fun beepUrgencyRemaining(state: GameState): Int {
+        if (!state.isSurvivorMode) return state.timeRemainingSeconds
+        val bank = state.settings.timerDurationSeconds
+        return state.aliveTeams.minOfOrNull { (bank - it.activeTimeSeconds).coerceAtLeast(0) } ?: 0
     }
 
     private fun beepIntervalMs(remainingSeconds: Int): Long {
