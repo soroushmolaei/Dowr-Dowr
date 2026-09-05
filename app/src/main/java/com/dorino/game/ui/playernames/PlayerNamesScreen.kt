@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -26,7 +27,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dorino.game.R
+import com.dorino.game.data.model.PlayerProfile
 import com.dorino.game.ui.components.GradientButton
+import com.dorino.game.ui.components.OptionChip
 import com.dorino.game.ui.components.SecondaryPill
 import com.dorino.game.ui.theme.DorinoError
 import com.dorino.game.ui.theme.DorinoOnSurfaceMuted
@@ -35,11 +38,21 @@ import com.dorino.game.ui.theme.DorinoOnSurfaceMuted
 @Composable
 fun PlayerNamesScreen(
     playerCount: Int,
+    savedPlayers: List<PlayerProfile> = emptyList(),
     onConfirm: (List<String>) -> Unit,
     onBack: () -> Unit
 ) {
     var names by remember(playerCount) {
         mutableStateOf((1..playerCount).map { "بازیکن $it" })
+    }
+
+    fun defaultNameFor(index: Int) = "بازیکن ${index + 1}"
+
+    fun addSavedPlayer(name: String) {
+        val slot = names.indices.firstOrNull { names[it] == defaultNameFor(it) }
+        if (slot != null) {
+            names = names.toMutableList().also { it[slot] = name }
+        }
     }
 
     val duplicates = names.filter { it.isNotBlank() }
@@ -70,6 +83,26 @@ fun PlayerNamesScreen(
             color = DorinoOnSurfaceMuted,
             fontSize = 11.sp
         )
+
+        if (savedPlayers.isNotEmpty()) {
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = stringResource(R.string.player_names_saved_hint),
+                color = DorinoOnSurfaceMuted,
+                fontSize = 12.sp
+            )
+            Spacer(Modifier.height(8.dp))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(savedPlayers) { profile ->
+                    OptionChip(
+                        text = profile.name,
+                        selected = profile.name in names,
+                        onClick = { addSavedPlayer(profile.name) }
+                    )
+                }
+            }
+        }
+
         Spacer(Modifier.height(16.dp))
 
         LazyColumn(

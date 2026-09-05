@@ -98,6 +98,7 @@ fun DorinoNavHost(viewModel: GameViewModel) {
         composable(Routes.PLAYER_NAMES) {
             PlayerNamesScreen(
                 playerCount = setupDraft.playerCount,
+                savedPlayers = playerProfiles.sortedByDescending { it.lastPlayedEpochMillis },
                 onConfirm = { names ->
                     viewModel.setPlayerNames(names)
                     viewModel.startNewGame()
