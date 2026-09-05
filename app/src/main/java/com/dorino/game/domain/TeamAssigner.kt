@@ -29,14 +29,14 @@ object TeamAssigner {
      */
     fun teamIdForSeatIndex(mode: GameMode, seatIndex: Int, playerCount: Int): Int {
         return when (mode) {
-            GameMode.TEAM_BATTLE -> seatIndex % 2
+            GameMode.TEAM_BATTLE, GameMode.PANTOMIME -> seatIndex % 2
             GameMode.PAIR_TEAMS -> seatIndex % (playerCount / 2)
         }
     }
 
     fun buildTeams(mode: GameMode, playerCount: Int): List<Team> {
         val teamCount = when (mode) {
-            GameMode.TEAM_BATTLE -> 2
+            GameMode.TEAM_BATTLE, GameMode.PANTOMIME -> 2
             GameMode.PAIR_TEAMS -> playerCount / 2
         }
         return (0 until teamCount).map { teamId ->
@@ -45,7 +45,7 @@ object TeamAssigner {
             }
             val paletteEntry = palette[teamId % palette.size]
             val name = when (mode) {
-                GameMode.TEAM_BATTLE -> if (teamId == 0) "تیم قرمز" else "تیم آبی"
+                GameMode.TEAM_BATTLE, GameMode.PANTOMIME -> if (teamId == 0) "تیم قرمز" else "تیم آبی"
                 GameMode.PAIR_TEAMS -> "تیم ${teamId + 1}"
             }
             Team(

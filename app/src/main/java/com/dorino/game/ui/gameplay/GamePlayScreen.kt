@@ -33,10 +33,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dorino.game.R
+import com.dorino.game.data.model.GameMode
 import com.dorino.game.data.model.GameState
 import com.dorino.game.data.model.TurnStyle
 import com.dorino.game.ui.components.GradientButton
 import com.dorino.game.ui.components.TimerRing
+import com.dorino.game.ui.theme.DorinoAccentGold
 import com.dorino.game.ui.theme.DorinoError
 import com.dorino.game.ui.theme.DorinoOnSurfaceMuted
 import com.dorino.game.ui.theme.DorinoSuccess
@@ -181,6 +183,18 @@ fun GamePlayScreen(
         }
 
         Spacer(Modifier.height(28.dp))
+
+        if (state.mode == GameMode.PANTOMIME) {
+            Text(
+                text = stringResource(R.string.pantomime_instruction),
+                color = DorinoAccentGold,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(Modifier.height(10.dp))
+        }
 
         Box(
             modifier = Modifier

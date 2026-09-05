@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import com.dorino.game.R
 import com.dorino.game.data.model.GameMode
 import com.dorino.game.ui.components.MiniSeatingPreview
+import com.dorino.game.ui.theme.DorinoAccentGold
 import com.dorino.game.ui.theme.DorinoOnSurfaceMuted
 import com.dorino.game.ui.theme.DorinoPrimary
 import com.dorino.game.ui.theme.DorinoSecondary
@@ -39,6 +42,7 @@ fun ModeSelectScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp, vertical = 32.dp)
     ) {
         Text(
@@ -66,6 +70,18 @@ fun ModeSelectScreen(
             mode = GameMode.PAIR_TEAMS,
             onClick = { onModeSelected(GameMode.PAIR_TEAMS) }
         )
+
+        Spacer2(18.dp)
+
+        ModeCard(
+            title = stringResource(R.string.mode3_title),
+            description = stringResource(R.string.mode3_description),
+            accent = DorinoAccentGold,
+            mode = GameMode.PANTOMIME,
+            onClick = { onModeSelected(GameMode.PANTOMIME) }
+        )
+
+        Spacer2(24.dp)
     }
 }
 

@@ -20,6 +20,10 @@
     <string name="mode1_description">بازیکنان به دو تیم مساوی تقسیم می‌شوند و به صورت یکی‌درمیان دور میز می‌نشینند.</string>
     <string name="mode2_title">تیم‌های دونفره</string>
     <string name="mode2_description">بازیکنان به تیم‌های دونفره تقسیم می‌شوند و اعضای هر تیم روبه‌روی یکدیگر می‌نشینند.</string>
+    <string name="mode3_title">پانتومیم</string>
+    <string name="mode3_description">مثل نبرد دو تیم، ولی به‌جای توضیح‌دادن با کلمه، باید کلمه را فقط با حرکات بدن نشان بدهی!</string>
+    <string name="pantomime_instruction">🎭 فقط با حرکات بدن نشونش بده، حرف نزن!</string>
+    <string name="pantomime_turn_badge">🎭 نوبت پانتومیم — بدون حرف زدن!</string>
 
     <!-- تعداد بازیکنان -->
     <string name="player_count_title">تعداد بازیکنان</string>

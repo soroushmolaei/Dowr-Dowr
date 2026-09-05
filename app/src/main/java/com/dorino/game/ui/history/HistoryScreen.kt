@@ -85,7 +85,11 @@ private fun HistoryRow(entry: GameHistoryEntry) {
     ) {
         Column {
             Text(
-                text = if (entry.mode == GameMode.TEAM_BATTLE) "نبرد دو تیم" else "تیم‌های دونفره",
+                text = when (entry.mode) {
+                    GameMode.TEAM_BATTLE -> "نبرد دو تیم"
+                    GameMode.PAIR_TEAMS -> "تیم‌های دونفره"
+                    GameMode.PANTOMIME -> "پانتومیم"
+                },
                 color = Color.White,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold

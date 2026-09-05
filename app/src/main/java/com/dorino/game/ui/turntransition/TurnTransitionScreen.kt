@@ -38,6 +38,7 @@ import com.dorino.game.data.model.Player
 import com.dorino.game.data.model.Team
 import com.dorino.game.ui.components.GradientButton
 import com.dorino.game.ui.components.PlayerAvatar
+import com.dorino.game.ui.theme.DorinoAccentGold
 
 @Composable
 fun TurnTransitionScreen(
@@ -100,6 +101,15 @@ fun TurnTransitionScreen(
                         color = Color.White.copy(alpha = 0.6f),
                         fontSize = 14.sp
                     )
+                    if (mode == GameMode.PANTOMIME) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.pantomime_turn_badge),
+                            color = DorinoAccentGold,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                     Spacer(Modifier.height(24.dp))
 
                     if (currentPlayer != null) {
