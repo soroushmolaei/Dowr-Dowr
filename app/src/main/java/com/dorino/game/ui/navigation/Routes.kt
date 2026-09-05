@@ -15,4 +15,5 @@ object Routes {
     const val SETTINGS = "settings"
     const val TUTORIAL = "tutorial"
     const val HISTORY = "history"
+    const val PLAYERS = "players"
 }

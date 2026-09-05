@@ -11,6 +11,7 @@ import com.dorino.game.data.model.GameMode
 import com.dorino.game.data.model.GameSettings
 import com.dorino.game.data.model.GameState
 import com.dorino.game.data.model.GameStatus
+import com.dorino.game.data.model.PlayerProfile
 import com.dorino.game.data.model.SurvivorCheckpointType
 import com.dorino.game.data.model.TurnStyle
 import com.dorino.game.data.persistence.GameStateStore
@@ -21,6 +22,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /** تنظیمات موقتِ در حال ساخت بازی، پیش از ایجاد GameState نهایی. */
@@ -49,6 +51,9 @@ class GameViewModel(
     private val _history = MutableStateFlow<List<GameHistoryEntry>>(emptyList())
     val history: StateFlow<List<GameHistoryEntry>> = _history.asStateFlow()
 
+    private val _playerProfiles = MutableStateFlow<List<PlayerProfile>>(emptyList())
+    val playerProfiles: StateFlow<List<PlayerProfile>> = _playerProfiles.asStateFlow()
+
     private val _lastResult = MutableStateFlow<GameResult?>(null)
     val lastResult: StateFlow<GameResult?> = _lastResult.asStateFlow()
 
@@ -72,6 +77,9 @@ class GameViewModel(
         }
         viewModelScope.launch {
             store.historyFlow.collect { _history.value = it }
+        }
+        viewModelScope.launch {
+            store.playerProfilesFlow.collect { _playerProfiles.value = it }
         }
     }
 
@@ -389,6 +397,41 @@ class GameViewModel(
                     durationSeconds = result.durationSeconds
                 )
             )
+        }
+        updatePlayerProfiles(state, result)
+    }
+
+    /**
+     * پروفایل ماندگارِ هر بازیکن (بر اساس اسم) را با نتیجه‌ی این بازی به‌روزرسانی می‌کند.
+     * اگر دو بازیکنِ همین یک بازی اسم یکسانی داشته باشند، آمارشان قبل از جمع‌شدن با پروفایل
+     * ذخیره‌شده با هم ادغام می‌شود تا یک بازی، به‌اشتباه دو بار برای همان اسم حساب نشود.
+     */
+    private fun updatePlayerProfiles(state: GameState, result: GameResult) {
+        viewModelScope.launch {
+            val winnerTeamIds = result.winnerTeams.map { it.id }.toSet()
+            val isDraw = result.winnerTeams.size != 1
+            val bestPlayerId = result.bestPlayer?.id
+            val now = System.currentTimeMillis()
+
+            val nameGroups = state.players.groupBy { it.name.trim() }.filterKeys { it.isNotEmpty() }
+            val current = store.playerProfilesFlow.first()
+            val byName = current.associateBy { it.name }.toMutableMap()
+
+            nameGroups.forEach { (name, playersWithName) ->
+                val existing = byName[name] ?: PlayerProfile(name = name)
+                val won = !isDraw && playersWithName.any { it.teamId in winnerTeamIds }
+                val wasBest = playersWithName.any { it.id == bestPlayerId }
+                byName[name] = existing.copy(
+                    gamesPlayed = existing.gamesPlayed + 1,
+                    gamesWon = existing.gamesWon + if (won) 1 else 0,
+                    totalCorrect = existing.totalCorrect + playersWithName.sumOf { it.correctCount },
+                    totalPass = existing.totalPass + playersWithName.sumOf { it.passCount },
+                    bestPlayerAwards = existing.bestPlayerAwards + if (wasBest) 1 else 0,
+                    lastPlayedEpochMillis = now
+                )
+            }
+
+            store.savePlayerProfiles(byName.values.toList())
         }
     }
 

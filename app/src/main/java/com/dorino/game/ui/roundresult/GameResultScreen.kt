@@ -3,6 +3,7 @@ package com.dorino.game.ui.roundresult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,9 +11,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -105,6 +108,30 @@ fun GameResultScreen(
                     StatRow(stringResource(R.string.best_player), it.name)
                 }
             }
+
+            item {
+                Spacer(Modifier.height(20.dp))
+                Text(
+                    text = stringResource(R.string.result_players_breakdown_title),
+                    color = DorinoOnSurfaceMuted,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(10.dp))
+            }
+
+            items(result.players) { player ->
+                val teamColor = result.teams.firstOrNull { it.id == player.teamId }?.colorHex?.let { hex ->
+                    runCatching { Color(android.graphics.Color.parseColor(hex)) }.getOrNull()
+                } ?: MaterialTheme.colorScheme.primary
+                PlayerBreakdownRow(
+                    name = player.name,
+                    teamColor = teamColor,
+                    correctCount = player.correctCount,
+                    passCount = player.passCount,
+                    isBest = player.id == result.bestPlayer?.id
+                )
+            }
         }
 
         GradientButton(
@@ -135,6 +162,54 @@ private fun StatRow(label: String, value: String) {
     ) {
         Text(label, color = DorinoOnSurfaceMuted, fontSize = 14.sp)
         Text(value, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+    }
+}
+
+@Composable
+private fun PlayerBreakdownRow(
+    name: String,
+    teamColor: Color,
+    correctCount: Int,
+    passCount: Int,
+    isBest: Boolean
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(DorinoSurfaceElevated.copy(alpha = 0.6f))
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(10.dp)
+                    .clip(CircleShape)
+                    .background(teamColor)
+            )
+            Spacer(Modifier.width(10.dp))
+            Text(
+                text = if (isBest) "👑 $name" else name,
+                color = Color.White,
+                fontSize = 14.sp,
+                fontWeight = if (isBest) FontWeight.Bold else FontWeight.Normal
+            )
+        }
+        Row {
+            Text(
+                text = stringResource(R.string.result_player_correct_short, correctCount),
+                color = DorinoOnSurfaceMuted,
+                fontSize = 12.sp
+            )
+            Spacer(Modifier.width(10.dp))
+            Text(
+                text = stringResource(R.string.result_player_pass_short, passCount),
+                color = DorinoOnSurfaceMuted,
+                fontSize = 12.sp
+            )
+        }
     }
 }
 

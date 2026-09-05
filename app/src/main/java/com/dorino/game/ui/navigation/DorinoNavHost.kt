@@ -17,6 +17,7 @@ import com.dorino.game.ui.home.HomeScreen
 import com.dorino.game.ui.modeselect.ModeSelectScreen
 import com.dorino.game.ui.playercount.PlayerCountScreen
 import com.dorino.game.ui.playernames.PlayerNamesScreen
+import com.dorino.game.ui.players.PlayersScreen
 import com.dorino.game.ui.roundresult.GameResultScreen
 import com.dorino.game.ui.seating.SeatingScreen
 import com.dorino.game.ui.settings.SettingsScreen
@@ -33,6 +34,7 @@ fun DorinoNavHost(viewModel: GameViewModel) {
     val gameState by viewModel.gameState.collectAsState()
     val setupDraft by viewModel.setupDraft.collectAsState()
     val history by viewModel.history.collectAsState()
+    val playerProfiles by viewModel.playerProfiles.collectAsState()
     val lastResult by viewModel.lastResult.collectAsState()
     val passCooldownRemaining by viewModel.passCooldownRemaining.collectAsState()
 
@@ -48,6 +50,7 @@ fun DorinoNavHost(viewModel: GameViewModel) {
                 },
                 onTutorial = { navController.navigate(Routes.TUTORIAL) },
                 onHistory = { navController.navigate(Routes.HISTORY) },
+                onPlayers = { navController.navigate(Routes.PLAYERS) },
                 onSettings = { navController.navigate(Routes.SETTINGS) }
             )
         }
@@ -232,6 +235,10 @@ fun DorinoNavHost(viewModel: GameViewModel) {
 
         composable(Routes.HISTORY) {
             HistoryScreen(history = history, onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.PLAYERS) {
+            PlayersScreen(profiles = playerProfiles, onBack = { navController.popBackStack() })
         }
     }
 }

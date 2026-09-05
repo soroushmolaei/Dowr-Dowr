@@ -8,6 +8,7 @@
     <string name="home_continue_game">ادامه بازی</string>
     <string name="home_tutorial">آموزش</string>
     <string name="home_history">تاریخچه</string>
+    <string name="home_players">بازیکنان</string>
     <string name="home_settings">تنظیمات</string>
     <string name="home_about">درباره بازی</string>
 
@@ -77,6 +78,9 @@
     <string name="total_pass">تعداد پاس</string>
     <string name="best_player">بهترین بازیکن</string>
     <string name="best_team">بهترین تیم</string>
+    <string name="result_players_breakdown_title">آمار بازیکنان این بازی</string>
+    <string name="result_player_correct_short">%1$d درست</string>
+    <string name="result_player_pass_short">%1$d پاس</string>
     <string name="play_again">بازی دوباره</string>
     <string name="back_to_home">بازگشت به خانه</string>
 
@@ -159,6 +163,13 @@
     <!-- تاریخچه -->
     <string name="history_title">تاریخچه بازی‌ها</string>
     <string name="history_empty">هنوز بازی‌ای ثبت نشده است.</string>
+
+    <!-- بازیکنان -->
+    <string name="players_title">بازیکنان</string>
+    <string name="players_empty">هنوز هیچ بازیکنی ثبت نشده است.</string>
+    <string name="players_games_and_wins">%1$d بازی · %2$d برد</string>
+    <string name="players_total_correct_value">%1$d پاسخ صحیح</string>
+    <string name="players_best_awards">%1$d بار بهترین بازیکن</string>
 
     <!-- درباره -->
     <string name="about_title">درباره دورینو</string>

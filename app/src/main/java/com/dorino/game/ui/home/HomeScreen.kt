@@ -43,6 +43,7 @@ fun HomeScreen(
     onContinueGame: () -> Unit,
     onTutorial: () -> Unit,
     onHistory: () -> Unit,
+    onPlayers: () -> Unit,
     onSettings: () -> Unit
 ) {
     var showAbout by remember { mutableStateOf(false) }
@@ -131,6 +132,11 @@ fun HomeScreen(
                 SecondaryPill(
                     text = stringResource(R.string.home_history),
                     onClick = onHistory,
+                    modifier = Modifier.weight(1f)
+                )
+                SecondaryPill(
+                    text = stringResource(R.string.home_players),
+                    onClick = onPlayers,
                     modifier = Modifier.weight(1f)
                 )
             }
